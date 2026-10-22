@@ -61,6 +61,23 @@ async function detectFace(source){
 function stopCamera(){if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}const v=$('cameraVideo');v.pause();v.srcObject=null}
 async function openCamera(){$('cameraDialog').hidden=false;$('cameraStatus').textContent='Đang yêu cầu quyền camera…';if(!navigator.mediaDevices?.getUserMedia){$('cameraStatus').textContent='Trình duyệt không hỗ trợ camera hoặc trang chưa chạy trên HTTPS.';return}stopCamera();try{cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:cameraFacing,width:{ideal:1280},height:{ideal:1600}},audio:false});$('cameraVideo').srcObject=cameraStream;$('cameraStatus').textContent='Camera đang hoạt động. Điều chỉnh makeup rồi chụp khi sẵn sàng.';initFaceTask().catch(()=>{})}catch(e){$('cameraStatus').textContent=e.name==='NotAllowedError'?'Chưa được cấp quyền camera. Hãy cho phép camera trong trình duyệt.':'Không mở được camera. Kiểm tra quyền truy cập hoặc thử thiết bị khác.'}}
 
+
+(function setupStudioToolTabs(){
+ const tools=document.getElementById('photoTools');if(!tools||tools.dataset.tabsReady)return;tools.dataset.tabsReady='1';
+ const anchor=document.querySelector('.face-status-row');if(!anchor)return;
+ const nav=document.createElement('nav');nav.className='studio-tool-tabs';nav.setAttribute('aria-label','Nhóm công cụ chỉnh ảnh');
+ const host=document.createElement('div');host.className='studio-tool-panes';
+ const defs=[['adjust','Điều chỉnh'],['beauty','Làm đẹp'],['filters','Bộ lọc'],['creative','Chữ & Sticker'],['export','Xuất ảnh']];
+ defs.forEach(([id,label])=>{const b=document.createElement('button');b.type='button';b.className='studio-tool-tab';b.dataset.toolTab=id;b.textContent=label;b.setAttribute('aria-selected','false');nav.appendChild(b);const p=document.createElement('section');p.className='studio-tool-pane';p.dataset.toolPane=id;p.hidden=true;host.appendChild(p)});
+ anchor.insertAdjacentElement('afterend',nav);nav.insertAdjacentElement('afterend',host);
+ const panes=Object.fromEntries([...host.children].map(p=>[p.dataset.toolPane,p]));
+ const classify=t=>{t=(t||'').toLowerCase();if(t.includes('makeup'))return 'beauty';if(t.includes('mood'))return 'filters';if(t.includes('sticker')||t.includes('typography')||t.includes('chèn chữ'))return 'creative';if(t.includes('xuất')||t.includes('export'))return 'export';return 'adjust'};
+ let group='adjust',node=nav.nextElementSibling;
+ while(node&&node!==host){const next=node.nextElementSibling;if(node.matches('.tools-title,.upload,.camera-launch,.face-status-row')){node=next;continue}if(node.matches('h3'))group=classify(node.textContent);if(node.matches('.hint')&&/Nhận diện khuôn mặt chạy/.test(node.textContent))group='beauty';if(node.matches('.export-options,#downloadPhoto,.actions'))group='export';panes[group].appendChild(node);node=next}
+ function activate(id){nav.querySelectorAll('button').forEach(b=>{const on=b.dataset.toolTab===id;b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on))});Object.values(panes).forEach(p=>p.hidden=p.dataset.toolPane!==id)}
+ nav.addEventListener('click',e=>{const b=e.target.closest('[data-tool-tab]');if(b)activate(b.dataset.toolTab)});activate('adjust');
+})();
+
 $('compactTools').addEventListener('click',()=>{const tools=$('photoTools'),compact=tools.classList.toggle('compact-tools');$('compactTools').textContent=compact?'Thoáng +':'Gọn hóa −';$('compactTools').setAttribute('aria-pressed',String(compact))});
 $('retryFaceAI').addEventListener('click',async()=>{if(faceTask){try{faceTask.close()}catch(_){}faceTask=null}faceTaskPromise=null;faceLandmarks=null;try{await initFaceTask();if(image)await detectFace(image)}catch(_){}});
 $('openCamera').addEventListener('click',openCamera);$('closeCamera').addEventListener('click',()=>{stopCamera();$('cameraDialog').hidden=true});
