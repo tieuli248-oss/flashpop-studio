@@ -31,16 +31,39 @@ $('photoEmpty').hidden=true;canvas.hidden=false;$('downloadPhoto').disabled=fals
 
 async function initFaceTask(){
  if(faceTask)return faceTask;if(faceTaskPromise)return faceTaskPromise;
- faceTaskPromise=(async()=>{const status=$('faceStatus');status.textContent='Đang tải mô hình nhận diện khuôn mặt lần đầu…';
- try{const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22');const fileset=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm');
- faceTask=await vision.FaceLandmarker.createFromOptions(fileset,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',delegate:'CPU'},runningMode:'IMAGE',numFaces:1,minFaceDetectionConfidence:.5,minFacePresenceConfidence:.5,minTrackingConfidence:.5});
- status.dataset.state='ready';status.textContent='Nhận diện khuôn mặt đã sẵn sàng · xử lý trên thiết bị.';return faceTask
- }catch(err){status.dataset.state='error';status.textContent='Chưa tải được mô hình AI. Makeup vẫn dùng chế độ vị trí tương đối; kiểm tra kết nối rồi thử lại.';throw err}})();
+ const status=$('faceStatus');status.dataset.state='';status.textContent='Đang tải mô hình nhận diện khuôn mặt…';
+ faceTaskPromise=(async()=>{let lastError;
+  const cdns=[
+   {module:'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22',wasm:'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm'},
+   {module:'https://unpkg.com/@mediapipe/tasks-vision@0.10.22',wasm:'https://unpkg.com/@mediapipe/tasks-vision@0.10.22/wasm'}
+  ];
+  for(const cdn of cdns){try{
+   const vision=await import(cdn.module);const fileset=await vision.FilesetResolver.forVisionTasks(cdn.wasm);
+   faceTask=await vision.FaceLandmarker.createFromOptions(fileset,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',delegate:'CPU'},runningMode:'IMAGE',numFaces:1,minFaceDetectionConfidence:.55,minFacePresenceConfidence:.55,minTrackingConfidence:.55});
+   status.dataset.state='ready';status.textContent='AI đã sẵn sàng · nhận diện và xử lý ngay trên thiết bị.';return faceTask;
+  }catch(err){lastError=err;try{faceTask?.close()}catch(_){}faceTask=null}}
+  status.dataset.state='error';status.textContent='Không tải được mô hình AI. Kiểm tra mạng rồi bấm “Thử lại AI”; makeup thủ công vẫn dùng được.';throw lastError||new Error('Face model unavailable');
+ })();
  try{return await faceTaskPromise}finally{faceTaskPromise=null}
 }
-async function detectFace(source){faceLandmarks=null;try{const task=await initFaceTask();const result=task.detect(source);faceLandmarks=result.faceLandmarks?.[0]||null;const s=$('faceStatus');if(faceLandmarks){s.dataset.state='ready';s.textContent='Đã nhận diện khuôn mặt · makeup bám theo các điểm trên mặt.'}else{s.dataset.state='error';s.textContent='Chưa nhận diện được mặt. Thử ảnh chân dung rõ, đủ sáng và nhìn gần về phía camera.'}}catch(e){}if(image)draw()}
+async function detectFace(source){
+ faceLandmarks=null;
+ try{
+  const task=await initFaceTask();let target=source,bitmap=null;
+  // Resize large photos before inference to reduce memory use and make mobile detection more reliable.
+  const sw=source.videoWidth||source.naturalWidth||source.width,sh=source.videoHeight||source.naturalHeight||source.height;
+  if(sw&&sh&&Math.max(sw,sh)>1280){const scale=1280/Math.max(sw,sh);bitmap=document.createElement('canvas');bitmap.width=Math.round(sw*scale);bitmap.height=Math.round(sh*scale);bitmap.getContext('2d',{willReadFrequently:true}).drawImage(source,0,0,bitmap.width,bitmap.height);target=bitmap}
+  const result=task.detect(target);faceLandmarks=result.faceLandmarks?.[0]||null;
+  // Landmarks must map back to the original canvas dimensions.
+  if(faceLandmarks&&bitmap){faceLandmarks=faceLandmarks.map(p=>({...p,x:p.x*bitmap.width/(source.naturalWidth||source.width),y:p.y*bitmap.height/(source.naturalHeight||source.height)}))}
+  const s=$('faceStatus');if(faceLandmarks){s.dataset.state='ready';s.textContent='Đã nhận diện khuôn mặt · makeup bám theo khuôn mặt.'}else{s.dataset.state='error';s.textContent='Chưa thấy khuôn mặt rõ. Thử ảnh đủ sáng, nhìn gần camera hoặc bấm thử lại AI.'}
+ }catch(e){}if(image)draw()
+}
 function stopCamera(){if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}const v=$('cameraVideo');v.pause();v.srcObject=null}
 async function openCamera(){$('cameraDialog').hidden=false;$('cameraStatus').textContent='Đang yêu cầu quyền camera…';if(!navigator.mediaDevices?.getUserMedia){$('cameraStatus').textContent='Trình duyệt không hỗ trợ camera hoặc trang chưa chạy trên HTTPS.';return}stopCamera();try{cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:cameraFacing,width:{ideal:1280},height:{ideal:1600}},audio:false});$('cameraVideo').srcObject=cameraStream;$('cameraStatus').textContent='Camera đang hoạt động. Điều chỉnh makeup rồi chụp khi sẵn sàng.';initFaceTask().catch(()=>{})}catch(e){$('cameraStatus').textContent=e.name==='NotAllowedError'?'Chưa được cấp quyền camera. Hãy cho phép camera trong trình duyệt.':'Không mở được camera. Kiểm tra quyền truy cập hoặc thử thiết bị khác.'}}
+
+$('compactTools').addEventListener('click',()=>{const tools=$('photoTools'),compact=tools.classList.toggle('compact-tools');$('compactTools').textContent=compact?'Thoáng +':'Gọn hóa −';$('compactTools').setAttribute('aria-pressed',String(compact))});
+$('retryFaceAI').addEventListener('click',async()=>{if(faceTask){try{faceTask.close()}catch(_){}faceTask=null}faceTaskPromise=null;faceLandmarks=null;try{await initFaceTask();if(image)await detectFace(image)}catch(_){}});
 $('openCamera').addEventListener('click',openCamera);$('closeCamera').addEventListener('click',()=>{stopCamera();$('cameraDialog').hidden=true});
 $('cameraDialog').addEventListener('click',e=>{if(e.target===$('cameraDialog'))$('closeCamera').click()});
 $('switchCamera').addEventListener('click',async()=>{cameraFacing=cameraFacing==='user'?'environment':'user';await openCamera()});
