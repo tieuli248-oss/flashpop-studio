@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#17121f" />
+  <meta name="description" content="FLASHPOP Studio — chỉnh ảnh và dựng video ngay trên trình duyệt." />
+  <title>FLASHPOP Studio</title>
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#home" aria-label="FLASHPOP Studio trang chủ"><span class="brand-mark">✦</span><span>FLASHPOP <b>STUDIO</b></span></a>
+      <div class="topbar-actions"><span class="local-badge"><i></i> Xử lý trên thiết bị</span><button class="button button-quiet" id="resetProjectBtn" type="button">Dự án mới</button></div>
+    </header>
+
+    <main>
+      <section class="welcome" id="home">
+        <div><p class="eyebrow">YOUR CREATIVE PLAYGROUND</p><h1>Ý tưởng của mày.<br><span>Phong cách của mày.</span></h1><p class="welcome-copy">Chỉnh ảnh lung linh, mở rộng sang dựng video — ngay trong trình duyệt.</p></div>
+        <div class="welcome-orbit" aria-hidden="true"><span class="orbit orbit-one"></span><span class="orbit orbit-two"></span><span class="orbit-star">✦</span><span class="orbit-dot"></span></div>
+      </section>
+
+      <nav class="mode-tabs" aria-label="Chọn chế độ chỉnh sửa">
+        <button class="mode-tab is-active" data-mode="photo" type="button"><span>▧</span> Chỉnh ảnh</button>
+        <button class="mode-tab" data-mode="video" type="button"><span>▷</span> Dựng video <small>Preview</small></button>
+      </nav>
+
+      <section class="workspace photo-workspace" id="photoWorkspace">
+        <aside class="tool-panel">
+          <div class="panel-heading"><div><p class="eyebrow">PHOTO LAB</p><h2>Chỉnh ảnh</h2></div><span class="step-number">01</span></div>
+          <label class="upload-zone" for="photoInput" id="photoDropZone"><span class="upload-icon">＋</span><strong>Chọn ảnh của mày</strong><span>JPG, PNG, WebP</span><span class="button button-primary">Tải ảnh lên</span><input id="photoInput" type="file" accept="image/*" /></label>
+          <div class="controls disabled" id="photoControls" aria-disabled="true">
+            <div class="control-heading"><h3>Điều chỉnh</h3><button id="resetAdjustmentsBtn" class="text-button" type="button">Đặt lại</button></div>
+            <label class="range-control"><span>Độ sáng <output id="brightnessValue">100%</output></span><input id="brightness" type="range" min="40" max="160" value="100" /></label>
+            <label class="range-control"><span>Tương phản <output id="contrastValue">100%</output></span><input id="contrast" type="range" min="40" max="160" value="100" /></label>
+            <label class="range-control"><span>Độ bão hòa <output id="saturationValue">100%</output></span><input id="saturation" type="range" min="0" max="200" value="100" /></label>
+            <label class="range-control"><span>Tông màu <output id="warmthValue">0°</output></span><input id="warmth" type="range" min="-40" max="40" value="0" /></label>
+            <div class="control-heading filter-heading"><h3>Bộ lọc nhanh</h3></div>
+            <div class="filter-grid">
+              <button class="filter-chip is-selected" data-filter="original" type="button"><span class="filter-swatch swatch-original"></span>Gốc</button>
+              <button class="filter-chip" data-filter="soft" type="button"><span class="filter-swatch swatch-soft"></span>Soft</button>
+              <button class="filter-chip" data-filter="film" type="button"><span class="filter-swatch swatch-film"></span>Film</button>
+              <button class="filter-chip" data-filter="mono" type="button"><span class="filter-swatch swatch-mono"></span>B&W</button>
+              <button class="filter-chip" data-filter="pink" type="button"><span class="filter-swatch swatch-pink"></span>Pink</button>
+              <button class="filter-chip" data-filter="dream" type="button"><span class="filter-swatch swatch-dream"></span>Dream</button>
+            </div>
+            <div class="control-heading"><h3>Khung hình</h3></div>
+            <div class="button-row"><button class="button button-secondary" id="rotateBtn" type="button">↻ Xoay 90°</button><button class="button button-secondary" id="flipBtn" type="button">⇋ Lật ngang</button></div>
+            <button class="button button-primary export-button" id="exportPhotoBtn" type="button" disabled>↓ Xuất ảnh PNG</button>
+            <p class="hint">Bản MVP: điều chỉnh màu, lọc, xoay, lật và xuất PNG. Ảnh được xử lý trên thiết bị.</p>
+          </div>
+        </aside>
+
+        <section class="preview-panel" aria-label="Xem trước ảnh">
+          <div class="preview-toolbar"><div><span class="status-dot"></span><span id="photoStatus">Chưa có ảnh</span></div><span class="preview-label">LIVE PREVIEW</span></div>
+          <div class="photo-stage" id="photoStage"><div class="empty-state" id="photoEmpty"><div class="empty-art">✧</div><h3>Ảnh đẹp bắt đầu từ đây</h3><p>Tải ảnh lên để thử màu sắc và bộ lọc.</p><button class="button button-primary" id="emptyUploadBtn" type="button">Chọn ảnh</button></div><canvas id="photoCanvas" hidden></canvas></div>
+          <div class="preview-footer"><span>FLASHPOP / PHOTO LAB</span><span id="photoDimensions">Canvas sẵn sàng</span></div>
+        </section>
+      </section>
+
+      <section class="workspace video-workspace" id="videoWorkspace" hidden>
+        <aside class="tool-panel video-tools">
+          <div class="panel-heading"><div><p class="eyebrow">VIDEO LAB</p><h2>Dựng video</h2></div><span class="step-number">02</span></div>
+          <label class="upload-zone compact-upload" for="videoInput"><span class="upload-icon">＋</span><strong>Thêm video</strong><span>MP4, WebM, MOV nếu trình duyệt hỗ trợ</span><span class="button button-primary">Chọn video</span><input id="videoInput" type="file" accept="video/*" /></label>
+          <div class="video-settings">
+            <h3>Thiết lập dự án</h3>
+            <label class="select-control">Tỷ lệ khung hình<select id="aspectRatio"><option value="9:16">9:16 · TikTok / Reels</option><option value="16:9">16:9 · YouTube</option><option value="1:1">1:1 · Vuông</option></select></label>
+            <label class="select-control">Tốc độ phát<select id="playbackRate"><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1× · Bình thường</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
+            <p class="hint">Đây là nền tảng Video Editor. Bản hiện tại hỗ trợ xem trước clip và quản lý danh sách clip; xuất MP4, timeline nhiều lớp và chuyển cảnh sẽ được triển khai ở bước kế tiếp.</p>
+          </div>
+        </aside>
+        <section class="video-editor-panel">
+          <div class="video-preview-wrap"><div class="video-preview" id="videoPreview"><div class="empty-state"><div class="empty-art">▷</div><h3>Không gian dựng video</h3><p>Thêm một clip để bắt đầu.</p></div></div></div>
+          <div class="timeline-head"><div><p class="eyebrow">TIMELINE</p><h3>Dòng thời gian</h3></div><span id="clipCount">0 clip</span></div>
+          <div class="timeline" id="timeline"><div class="timeline-empty">Clip của mày sẽ xuất hiện ở đây.</div></div>
+          <div class="clip-list" id="clipList"></div>
+          <div class="timeline-actions"><span class="hint">Mỗi clip đang được giữ trong bộ nhớ của tab này.</span><button class="button button-secondary" id="clearClipsBtn" type="button" disabled>Xóa danh sách</button></div>
+        </section>
+      </section>
+    </main>
+    <footer class="footer"><span>✦ FLASHPOP STUDIO</span><span>Made for your next idea.</span></footer>
+  </div>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
