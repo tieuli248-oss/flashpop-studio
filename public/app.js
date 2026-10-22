@@ -19,7 +19,7 @@ searchForm.addEventListener("submit",e=>{e.preventDefault();const q=queryInput.v
 resultsBox.addEventListener("click",e=>{const b=e.target.closest("[data-video]");if(!b)return;const id=b.dataset.video;if(!/^[\w-]{11}$/.test(id)){msg.textContent="Kết quả không có mã video hợp lệ.";return;}loadVideo(id);});
 urlForm.addEventListener("submit",e=>{e.preventDefault();const id=videoId(urlInput.value.trim());if(!id||!/^[\w-]{11}$/.test(id)){msg.textContent="Link chưa đúng. Dán link youtube.com/watch?v=… hoặc youtu.be/…";return;}loadVideo(id);});
 function noteFromMidi(m){const names=["Đô","Đô♯","Rê","Rê♯","Mi","Fa","Fa♯","Sol","Sol♯","La","La♯","Si"];return names[((m%12)+12)%12]+(Math.floor(m/12)-1);}
-let tuneNode=null,detectedNote=-1,correctedNote=-1;
+let tuneNode=null,detectedNote=-1,correctedNote=-1,bassFilter=null,echoDelay=null,echoFeedback=null,echoWet=null,toneActive=false,toneTimer=null,toneCounts=Array(12).fill(0),toneStarted=0,lastToneNote=-1;
 function sendTuneSettings(){
  if(!tuneNode)return;
  const root=Math.max(0,Math.min(11,$("keySelect").selectedIndex));
@@ -36,8 +36,8 @@ async function startMic(){
  analyser.fftSize=2048;monitorGain.gain.value=0;gain.gain.value=Number($("gainSlider").value)/100;
  await ctx.audioWorklet.addModule("/worklet.js");
  tuneNode=new AudioWorkletNode(ctx,"karaoke-tune-processor",{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[1]});
- tuneNode.port.onmessage=e=>{detectedNote=e.data.detectedNote;correctedNote=e.data.correctedNote;const m=detectedNote;if(m>=0){$("noteName").textContent=noteFromMidi(m);$("frequency").textContent=(440*Math.pow(2,(m-69)/12)).toFixed(1)+" Hz";$("noteDescription").textContent=correctedNote>=0?"Auto-Tune mục tiêu: "+noteFromMidi(correctedNote):"Đang dò cao độ";$("tunerNeedle").style.left="50%";}else{$("noteName").textContent="—";$("frequency").textContent="— Hz";$("noteDescription").textContent="Hát một nốt rõ để dò";$("tunerNeedle").style.left="50%";}};
- source.connect(gain);gain.connect(tuneNode);tuneNode.connect(analyser);tuneNode.connect(monitorGain);monitorGain.connect(ctx.destination);
+ tuneNode.port.onmessage=e=>{detectedNote=e.data.detectedNote;correctedNote=e.data.correctedNote;const m=detectedNote;if(toneActive&&m>=0&&m!==lastToneNote){toneCounts[((m%12)+12)%12]++;lastToneNote=m;updateToneEstimate();}if(m>=0){$("noteName").textContent=noteFromMidi(m);$("frequency").textContent=(440*Math.pow(2,(m-69)/12)).toFixed(1)+" Hz";$("noteDescription").textContent=correctedNote>=0?"Auto-Tune mục tiêu: "+noteFromMidi(correctedNote):"Đang dò cao độ";$("tunerNeedle").style.left="50%";}else{$("noteName").textContent="—";$("frequency").textContent="— Hz";$("noteDescription").textContent="Hát một nốt rõ để dò";$("tunerNeedle").style.left="50%";}};
+ source.connect(gain);gain.connect(tuneNode);tuneNode.connect(analyser);\n bassFilter=ctx.createBiquadFilter();bassFilter.type="lowshelf";bassFilter.frequency.value=180;bassFilter.gain.value=0;\n echoDelay=ctx.createDelay(1.2);echoDelay.delayTime.value=0.24;echoFeedback=ctx.createGain();echoWet=ctx.createGain();echoFeedback.gain.value=0.18;echoWet.gain.value=0;\n tuneNode.connect(bassFilter);bassFilter.connect(monitorGain);bassFilter.connect(echoDelay);echoDelay.connect(echoWet);echoWet.connect(monitorGain);echoDelay.connect(echoFeedback);echoFeedback.connect(echoDelay);monitorGain.connect(ctx.destination);\n updateEffects();
  sendTuneSettings();
  if($("monitorToggle").checked)monitorGain.gain.setTargetAtTime(Number($("monitorVolume").value)/100,ctx.currentTime,.03);
  $("micStatus").textContent="MIC ĐANG BẬT";$("micStatus").classList.add("active");$("micButton").classList.add("enabled");$("micButton").textContent="⏹ Tắt micro";
@@ -47,7 +47,7 @@ function tick(){}
 function stopMic(){
  if(stream)stream.getTracks().forEach(t=>t.stop());
  if(ctx&&ctx.state!=="closed")ctx.close().catch(()=>{});
- stream=ctx=source=gain=analyser=monitorGain=tuneNode=null;detectedNote=correctedNote=-1;
+ if(toneTimer)clearTimeout(toneTimer);toneTimer=null;toneActive=false;stream=ctx=source=gain=analyser=monitorGain=tuneNode=bassFilter=echoDelay=echoFeedback=echoWet=null;detectedNote=correctedNote=-1;
  $("monitorToggle").checked=false;$("micStatus").textContent="CHƯA KẾT NỐI";$("micStatus").classList.remove("active");$("micButton").classList.remove("enabled");$("micButton").textContent="🎤 Bật micro";
  $("noteName").textContent="—";$("frequency").textContent="— Hz";$("noteDescription").textContent="Bật micro để dò nốt";$("tunerNeedle").style.left="50%";
  $("micHelp").textContent="Auto-Tune cần HTTPS hoặc localhost và quyền micro. Đeo tai nghe khi bật nghe giọng.";
@@ -60,5 +60,45 @@ $("autotuneStrength").addEventListener("input",()=>{$("autotuneValue").textConte
 $("autotuneToggle").addEventListener("change",()=>{sendTuneSettings();$("autotuneStatus").textContent=$("autotuneToggle").checked?"Auto-Tune đang chỉnh cao độ trực tiếp theo tông và thang âm đã chọn.":"Auto-Tune đã tắt; giọng micro nghe nguyên bản.";});
 $("keySelect").addEventListener("change",sendTuneSettings);
 if($("scaleSelect"))$("scaleSelect").addEventListener("change",sendTuneSettings);
-window.addEventListener("beforeunload",stopMic);
+
+const NOTE_NAMES=["Đô","Đô♯","Rê","Rê♯","Mi","Fa","Fa♯","Sol","Sol♯","La","La♯","Si"];
+const MAJOR=[6.35,2.23,3.48,2.33,4.38,4.09,2.52,5.19,2.39,3.66,2.29,2.88];
+const MINOR=[6.33,2.68,3.52,5.38,2.6,3.53,2.54,4.75,3.98,2.69,3.34,3.17];
+function updateToneEstimate(){
+ const total=toneCounts.reduce((a,b)=>a+b,0);
+ if(total<5){$("toneStatus").textContent="ĐANG NGHE";$("detectedKey").textContent="…";$("detectedScale").textContent="Cần thêm nốt rõ";return;}
+ let best={score:-Infinity,root:0,scale:"Trưởng"};
+ for(let root=0;root<12;root++)for(const [scale,profile] of [["Trưởng",MAJOR],["Thứ",MINOR]]){
+  let score=0;for(let n=0;n<12;n++)score+=toneCounts[(n+root)%12]*profile[n];
+  if(score>best.score)best={score,root,scale};
+ }
+ $("toneStatus").textContent="CÓ ƯỚC LƯỢNG";
+ $("detectedKey").textContent=NOTE_NAMES[best.root]+" ("+["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"][best.root]+")";
+ $("detectedScale").textContent=best.scale+" · "+total+" mẫu nốt";
+ $("useDetectedKey").disabled=false;$("useDetectedKey").dataset.root=String(best.root);$("useDetectedKey").dataset.scale=best.scale==="Thứ"?"2":"1";
+}
+$("analyzeTone").addEventListener("click",()=>{
+ if(!stream){$("toneStatus").textContent="BẬT MICRO TRƯỚC";$("toneStatus").style.color="var(--pink)";return;}
+ toneCounts=Array(12).fill(0);lastToneNote=-1;toneActive=true;toneStarted=Date.now();
+ $("toneStatus").textContent="ĐANG NGHE 12 GIÂY";$("detectedKey").textContent="…";$("detectedScale").textContent="Hát/ngân theo nhạc";
+ $("useDetectedKey").disabled=true;$("analyzeTone").disabled=true;
+ toneTimer=setTimeout(()=>{toneActive=false;$("toneStatus").textContent="ĐÃ HOÀN TẤT";$("analyzeTone").disabled=false;updateToneEstimate();},12000);
+});
+$("useDetectedKey").addEventListener("click",()=>{
+ if($("useDetectedKey").disabled)return;
+ $("keySelect").selectedIndex=Number($("useDetectedKey").dataset.root||0);
+ if($("scaleSelect"))$("scaleSelect").value=$("useDetectedKey").dataset.scale||"1";
+ sendTuneSettings();$("autotuneStatus").textContent="Đã chọn tông gợi ý từ giọng mày hát. Nếu nhạc nền khác tông, hãy đổi lại thủ công.";
+});
+function updateEffects(){
+ if(!ctx)return;
+ const echo=Number($("echoSlider").value)/100,bass=Number($("bassSlider").value);
+ $("echoValue").textContent=$("echoSlider").value+"%";$("bassValue").textContent=$("bassSlider").value+"%";
+ if(echoWet)echoWet.gain.setTargetAtTime(echo,ctx.currentTime,.04);
+ if(echoFeedback)echoFeedback.gain.setTargetAtTime(Math.min(.38,echo*.55),ctx.currentTime,.04);
+ if(bassFilter)bassFilter.gain.setTargetAtTime(bass*.12,ctx.currentTime,.04);
+}
+$("echoSlider").addEventListener("input",updateEffects);
+$("bassSlider").addEventListener("input",updateEffects);
+\nwindow.addEventListener("beforeunload",stopMic);
 })();
