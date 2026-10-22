@@ -272,3 +272,24 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .grid:not(.lower)>section.panel:nth-child(2)>.autotune .autotunehead small{font-size:0}
 .grid:not(.lower)>section.panel:nth-child(2)>.autotune .autotunehead small:after{content:"03 / AUTO-TUNE · AUTO MODE";font-size:11px}
 .grid:not(.lower)>section.panel:nth-child(2)>.autotune #autotuneStatus{font-size:12px}
+
+
+/* Music source layout and compact, scrollable search results */
+.music-source-panel .music-source-layout{
+ display:grid;
+ grid-template-columns:minmax(0,1fr) minmax(280px,0fr);
+ gap:13px;
+ align-items:start;
+}
+.search-results{
+ gap:1px;
+ max-height:240px;
+ margin:8px 0 12px;
+ scrollbar-width:thin;
+ scrollbar-color:#45404b transparent;
+}
+.music-source-panel .music-search-side .search-results{
+ max-height:330px;
+ overflow-y:auto;
+ overscroll-behavior:contain;
+}
