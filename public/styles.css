@@ -73,3 +73,101 @@ button:hover{filter:brightness(1.07)}button:focus-visible,input:focus-visible,se
  .lower{margin-top:10px}.lower .panel{padding:14px}.notePanel{gap:12px}.disc{width:46px;height:46px;font-size:23px;border-radius:13px}
  footer{font-size:8px;padding:18px 0 22px}
 }
+
+
+/* Minimal professional redesign */
+:root{--bg:#0c0c10;--panel:#141419;--line:#292931;--text:#f4f4f7;--muted:#9b9ba8;--pink:#d6a4ff;--purple:#b9a1ff;--cyan:#9bdcff;--green:#9fe6c5}
+body{background:#0c0c10;color:var(--text)}
+.glow{display:none}
+header{height:60px;padding:0 max(calc((100vw - 1120px)/2),24px);background:#0c0c10;border-bottom:1px solid #24242a;backdrop-filter:none}
+.brand{font-size:12px;letter-spacing:.45px;gap:8px}.brand b{width:29px;height:29px;border-radius:8px;background:#c9a2f5;color:#17121d;box-shadow:none}.brand span{color:#bda0df}
+.topnote{font-size:9px;color:#9696a3}.topnote i{background:#8ed9b6}
+.spark{display:none}
+main{max-width:1120px;padding:0 22px}
+.hero{text-align:left;padding:32px 0 23px;max-width:740px}
+.eyebrow{color:#bda0df;font-size:9px;letter-spacing:1.4px}
+h1{font-size:clamp(32px,4vw,47px);letter-spacing:-1.9px;line-height:1.12;margin:10px 0}
+h1 em{background:none;color:#d3b1f2}
+.hero p{margin:0;max-width:570px;font-size:12px;line-height:1.7;color:#a6a6b2}
+.tags{justify-content:flex-start;gap:7px;margin-top:14px;font-size:8px}
+.tags span{padding:5px 8px;border:1px solid #2a2a32;border-radius:6px;color:#b8b8c4;background:transparent}
+.grid{grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:14px;align-items:start}
+.panel{min-width:0;padding:19px;border:1px solid #292930;border-radius:13px;background:#131317;box-shadow:none}
+.head{margin-bottom:14px}
+.head h2,h2{font-size:17px;letter-spacing:-.3px;font-weight:700}
+.head small,.tone-title small,.autotunehead small{color:#aaa0ba;font-size:8px;letter-spacing:1.1px}
+.head label,.autotunehead>label{border:1px solid #39313f;color:#c9a9e8;border-radius:5px;padding:5px 7px;font-size:8px}
+.searchform{gap:7px}
+.searchform input{background:#0d0d11;border:1px solid #303038;border-radius:8px;padding:11px 12px;color:var(--text);font:12px Manrope;min-height:42px}
+.searchform input:focus{border-color:#a987c9}
+button{background:#c9a3e8;color:#1b1422;border-radius:8px;box-shadow:none;font-size:11px;font-weight:700}
+button:hover{filter:brightness(1.06)}
+.searchform button{min-height:42px;padding:0 14px}
+.hint{font-size:10px;color:#8f8f9c;margin:8px 0 10px}
+.search-results{gap:5px;max-height:240px;margin:8px 0 12px;scrollbar-width:thin;scrollbar-color:#45404b transparent}
+.search-empty{border:1px solid #2c2c34;border-radius:8px;padding:11px}
+.result{min-height:59px;padding:6px 8px;gap:9px;background:#18181e;border:1px solid #292930;border-radius:8px;transition:background .15s,border-color .15s}
+.result:hover{background:#202027;border-color:#5c4b69;transform:none}
+.result img{width:78px;height:44px;border-radius:5px}
+.result-copy b{font-size:10px;font-weight:650;line-height:1.4}
+.result-copy small{font-size:9px;color:#92929e}
+.result-play{color:#d6b6f1}
+.video{border:1px solid #2b2b33;border-radius:9px;background:#09090c}
+.foot{font-size:8px;color:#777783;margin-top:10px}
+.pitch{background:#101015;border:1px solid #292930;border-radius:10px;padding:13px;margin-bottom:10px}
+.pitchhead{font-size:8px;color:#9999a5}
+.pitchhead label{border-radius:5px;background:#1b1b21;color:#a4a4b0}
+.pitchhead label.active{color:#9fe6c5;background:#15221c}
+.note{margin:17px 0}.note>strong{font-size:45px;background:none;color:#d6b6f1;min-width:74px}
+.note div b{font-size:13px}.note div span{font-size:9px}
+.meter{height:5px;background:linear-gradient(90deg,#bca6ce,#9fe6c5 50%,#bca6ce)}
+.meter i{height:15px;top:-5px}.meter b{height:13px;top:-4px}
+.meterlabels{font-size:8px;color:#858591}
+.micbutton{width:100%;min-height:41px}
+.micbutton.enabled{background:#9fe6c5;color:#142019}
+.device-row{margin:10px 0;gap:7px}.device-row label{font-size:10px;color:#a2a2ae}
+.device-row select,.keyrow select{background:#0e0e13;border:1px solid #303038;color:#e8e8ef;border-radius:7px}
+.device-row button{background:#1b1b21;color:#d9d9e1;border:1px solid #34343d}
+.device-note{font-size:9px;line-height:1.55;color:#858591}
+.monitor-row{background:#101015;border:1px solid #292930;border-radius:9px;padding:11px;gap:12px}
+.toggle b,.control b,.keyrow label{font-size:10px}
+.toggle small{font-size:9px;color:#8e8e9b}
+.toggle-ui{background:#393942}.toggle input:checked+.toggle-ui{background:#bda0df}
+.control{border-top:1px solid #27272e;margin-top:12px;padding-top:11px}
+.control output{color:#c9a9e8;font-size:9px}
+input[type=range]{accent-color:#c6a1e5}
+.autotune,.tone-detector,.effects,.music-controls{background:#101015;border:1px solid #292930;border-radius:10px;padding:13px;margin-top:12px}
+.autotune p,.tone-detector p,.effects p{font-size:9px;line-height:1.6;color:#92929f;margin:8px 0}
+.autotunehead h3,.tone-title h3{font-size:13px}
+.live-label{color:#9fe6c5!important;border-color:#30483c!important}
+.tone-title>span{border:1px solid #303038;color:#bca6d0;border-radius:5px;font-size:8px}
+.tone-result strong{background:none;color:#d3b1f2;font-size:27px}
+.tone-result span{font-size:9px;color:#92929f}
+.audio-file-label{border:1px solid #4a3c54;background:#19151e;color:#d7c1e8;border-radius:7px;font-size:10px;min-height:38px}
+.audio-file-name{background:#0c0c10;border:1px solid #282830;border-radius:7px;color:#91919e}
+.capture-audio-button{background:#bca0d8;color:#20182a;min-height:40px}
+.tone-actions button{min-height:37px}
+.keyrow{margin-top:10px}.keyrow select{padding:8px;max-width:60%}
+.lower{margin-top:14px}.lower .panel{padding:17px}
+.lower ol{gap:12px;margin-top:14px}
+.lower li>b{background:#1d1823;border:1px solid #39303f;color:#c9a9e8;border-radius:8px}
+.lower li strong{font-size:10px}.lower li span{font-size:9px;color:#92929f}
+.disc{background:#1c1821;border:1px solid #332b3b;border-radius:12px}
+.notePanel p{font-size:9px;color:#92929f;line-height:1.7}
+footer{border-top:1px solid #24242a;margin-top:8px;padding:18px 0 24px;color:#777783;font-size:8px}
+footer b{color:#c9a9e8}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #bda0df;outline-offset:2px}
+@media(min-width:1100px){.grid{gap:16px}.panel{padding:20px}.search-results{max-height:230px}}
+@media(max-width:850px){header{padding:0 18px}.hero{padding:28px 0 20px}.grid{grid-template-columns:minmax(0,1fr);gap:12px}.panel{padding:17px}}
+@media(max-width:520px){
+ header{height:54px;padding:0 13px}.brand{font-size:10px}.brand b{width:27px;height:27px}.topnote{font-size:7px;letter-spacing:0}
+ main{padding:0 11px}.hero{padding:24px 0 17px}h1{font-size:35px;letter-spacing:-1.7px}.hero p{font-size:11px}.tags{gap:5px;margin-top:11px}.tags span{font-size:7px;padding:5px 6px}
+ .panel{padding:13px;border-radius:11px}.head{margin-bottom:11px}.head h2,h2{font-size:16px}
+ .searchform{flex-direction:row;gap:6px}.searchform input{padding:10px;min-height:41px;font-size:14px}.searchform button{padding:0 11px;min-height:41px;font-size:10px}
+ .search-results{max-height:225px}.result{min-height:55px;padding:5px;gap:7px}.result img{width:67px;height:39px}.result-copy b{font-size:10px}.result-play{padding:0 3px}
+ .note>strong{font-size:42px;min-width:65px}.device-row select,.device-row button{min-height:41px;font-size:14px}
+ .autotunehead{flex-direction:row;align-items:center}.autotune,.tone-detector,.effects,.music-controls{padding:11px}
+ .tone-actions{display:grid;grid-template-columns:1fr}.tone-actions button{min-height:39px}
+ .lower{margin-top:10px}.lower .panel{padding:13px}.notePanel{gap:11px}.disc{width:43px;height:43px;font-size:21px}
+ footer{padding:16px 0 20px;font-size:8px}
+}
