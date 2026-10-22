@@ -18,14 +18,47 @@ async function searchSongs(query){if(searchController)searchController.abort();s
 searchForm.addEventListener("submit",e=>{e.preventDefault();const q=queryInput.value.trim();if(q.length<2){msg.textContent="Nhập ít nhất 2 ký tự để tìm bài.";return;}searchSongs(q);});
 resultsBox.addEventListener("click",e=>{const b=e.target.closest("[data-video]");if(!b)return;const id=b.dataset.video;if(!/^[\w-]{11}$/.test(id)){msg.textContent="Kết quả không có mã video hợp lệ.";return;}loadVideo(id);});
 urlForm.addEventListener("submit",e=>{e.preventDefault();const id=videoId(urlInput.value.trim());if(!id||!/^[\w-]{11}$/.test(id)){msg.textContent="Link chưa đúng. Dán link youtube.com/watch?v=… hoặc youtu.be/…";return;}loadVideo(id);});
-function noteFromHz(hz){const names=["Đô","Đô♯","Rê","Rê♯","Mi","Fa","Fa♯","Sol","Sol♯","La","La♯","Si"],midi=Math.round(69+12*Math.log2(hz/440)),cents=Math.round(1200*Math.log2(hz/(440*Math.pow(2,(midi-69)/12))));return {name:names[((midi%12)+12)%12]+(Math.floor(midi/12)-1),cents};}
-function pitch(buf,sr){let rms=0;for(let i=0;i<buf.length;i++)rms+=buf[i]*buf[i];rms=Math.sqrt(rms/buf.length);if(rms<.012)return null;let bestLag=-1,best=0;const maxLag=Math.min(Math.floor(sr/65),buf.length/2),minLag=Math.max(2,Math.floor(sr/1000));for(let lag=minLag;lag<maxLag;lag++){let sum=0;for(let i=0;i<buf.length-lag;i++)sum+=buf[i]*buf[i+lag];if(sum>best){best=sum;bestLag=lag;}}if(bestLag<0||best/(buf.length*rms*rms)<.15)return null;const hz=sr/bestLag;return hz>=65&&hz<=1000?hz:null;}
-async function startMic(){if(!navigator.mediaDevices?.getUserMedia)throw Error("Micro cần HTTPS hoặc localhost và trình duyệt hỗ trợ.");stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:false}});const AC=window.AudioContext||window.webkitAudioContext;ctx=new AC();await ctx.resume();source=ctx.createMediaStreamSource(stream);gain=ctx.createGain();analyser=ctx.createAnalyser();monitorGain=ctx.createGain();analyser.fftSize=4096;source.connect(gain);gain.connect(analyser);gain.connect(monitorGain);monitorGain.connect(ctx.destination);monitorGain.gain.value=$("monitorToggle").checked?Number($("monitorVolume").value)/100:0;gain.gain.value=Number($("gainSlider").value)/100;$("micStatus").textContent="MIC ĐANG BẬT";$("micStatus").classList.add("active");$("micButton").classList.add("enabled");$("micButton").textContent="⏹ Tắt micro";$("micHelp").textContent=$("monitorToggle").checked?"Đang nghe lại giọng qua thiết bị âm thanh. Đeo tai nghe để tránh hú.":"Đang dò nốt. Bật “Nghe lại tiếng micro” nếu muốn nghe giọng mình.";tick();}
-function tick(){if(!analyser||!ctx)return;const b=new Float32Array(analyser.fftSize);analyser.getFloatTimeDomainData(b);const hz=pitch(b,ctx.sampleRate),now=performance.now();if(now-lastUpdate>80){lastUpdate=now;if(hz){const n=noteFromHz(hz);$("noteName").textContent=n.name;$("frequency").textContent=hz.toFixed(1)+" Hz";$("noteDescription").textContent=(n.cents>0?"+":"")+n.cents+" cent so với nốt gần nhất";$("tunerNeedle").style.left=(50+Math.max(-50,Math.min(50,n.cents)))+"%";}else{$("noteName").textContent="—";$("frequency").textContent="— Hz";$("noteDescription").textContent="Hát một nốt rõ để dò";$("tunerNeedle").style.left="50%";}}raf=requestAnimationFrame(tick);}
-function stopMic(){if(raf)cancelAnimationFrame(raf);raf=null;if(stream)stream.getTracks().forEach(t=>t.stop());if(ctx&&ctx.state!=="closed")ctx.close().catch(()=>{});stream=ctx=source=gain=analyser=monitorGain=null;$("monitorToggle").checked=false;$("monitorValue").textContent=$("monitorVolume").value+"%";$("micStatus").textContent="CHƯA KẾT NỐI";$("micStatus").classList.remove("active");$("micButton").classList.remove("enabled");$("micButton").textContent="🎤 Bật micro";$("noteName").textContent="—";$("frequency").textContent="— Hz";$("noteDescription").textContent="Bật micro để dò nốt";$("tunerNeedle").style.left="50%";$("micHelp").textContent="Cần quyền micro và HTTPS hoặc localhost. Đeo tai nghe trước khi bật nghe giọng để tránh hú."; $("monitorToggle").checked=false;}
-$("micButton").addEventListener("click",async()=>{if(stream){stopMic();return;}const b=$("micButton");b.disabled=true;b.textContent="Đang kết nối micro…";try{await startMic()}catch(e){stopMic();$("micHelp").textContent=e.message||"Không thể bật micro. Kiểm tra quyền truy cập."}finally{b.disabled=false;}});
+function noteFromMidi(m){const names=["Đô","Đô♯","Rê","Rê♯","Mi","Fa","Fa♯","Sol","Sol♯","La","La♯","Si"];return names[((m%12)+12)%12]+(Math.floor(m/12)-1);}
+let tuneNode=null,detectedNote=-1,correctedNote=-1;
+function sendTuneSettings(){
+ if(!tuneNode)return;
+ const root=Math.max(0,Math.min(11,$("keySelect").selectedIndex));
+ const scale=$("scaleSelect")?Number($("scaleSelect").value):1;
+ tuneNode.port.postMessage({root,scale,strength:Number($("autotuneStrength").value),enabled:$("autotuneToggle").checked,speed:Math.max(1,105-Number($("autotuneStrength").value))});
+}
+async function startMic(){
+ if(!navigator.mediaDevices?.getUserMedia)throw Error("Micro cần HTTPS hoặc localhost và trình duyệt hỗ trợ.");
+ const AC=window.AudioContext||window.webkitAudioContext;
+ ctx=new AC({latencyHint:"interactive"});
+ await ctx.resume();
+ stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}});
+ source=ctx.createMediaStreamSource(stream);gain=ctx.createGain();analyser=ctx.createAnalyser();monitorGain=ctx.createGain();
+ analyser.fftSize=2048;monitorGain.gain.value=0;gain.gain.value=Number($("gainSlider").value)/100;
+ await ctx.audioWorklet.addModule("/worklet.js");
+ tuneNode=new AudioWorkletNode(ctx,"karaoke-tune-processor",{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[1]});
+ tuneNode.port.onmessage=e=>{detectedNote=e.data.detectedNote;correctedNote=e.data.correctedNote;const m=detectedNote;if(m>=0){$("noteName").textContent=noteFromMidi(m);$("frequency").textContent=(440*Math.pow(2,(m-69)/12)).toFixed(1)+" Hz";$("noteDescription").textContent=correctedNote>=0?"Auto-Tune mục tiêu: "+noteFromMidi(correctedNote):"Đang dò cao độ";$("tunerNeedle").style.left="50%";}else{$("noteName").textContent="—";$("frequency").textContent="— Hz";$("noteDescription").textContent="Hát một nốt rõ để dò";$("tunerNeedle").style.left="50%";}};
+ source.connect(gain);gain.connect(tuneNode);tuneNode.connect(analyser);tuneNode.connect(monitorGain);monitorGain.connect(ctx.destination);
+ sendTuneSettings();
+ if($("monitorToggle").checked)monitorGain.gain.setTargetAtTime(Number($("monitorVolume").value)/100,ctx.currentTime,.03);
+ $("micStatus").textContent="MIC ĐANG BẬT";$("micStatus").classList.add("active");$("micButton").classList.add("enabled");$("micButton").textContent="⏹ Tắt micro";
+ $("micHelp").textContent="Auto-Tune đang xử lý giọng trực tiếp. Đeo tai nghe để tránh hú; loa ngoài có thể gây vọng.";
+}
+function tick(){}
+function stopMic(){
+ if(stream)stream.getTracks().forEach(t=>t.stop());
+ if(ctx&&ctx.state!=="closed")ctx.close().catch(()=>{});
+ stream=ctx=source=gain=analyser=monitorGain=tuneNode=null;detectedNote=correctedNote=-1;
+ $("monitorToggle").checked=false;$("micStatus").textContent="CHƯA KẾT NỐI";$("micStatus").classList.remove("active");$("micButton").classList.remove("enabled");$("micButton").textContent="🎤 Bật micro";
+ $("noteName").textContent="—";$("frequency").textContent="— Hz";$("noteDescription").textContent="Bật micro để dò nốt";$("tunerNeedle").style.left="50%";
+ $("micHelp").textContent="Auto-Tune cần HTTPS hoặc localhost và quyền micro. Đeo tai nghe khi bật nghe giọng.";
+}
+$("micButton").addEventListener("click",async()=>{if(stream){stopMic();return;}const b=$("micButton");b.disabled=true;b.textContent="Đang kết nối micro…";try{await startMic()}catch(e){stopMic();$("micHelp").textContent=(e.message||"Không thể bật micro.")+" Nếu trình duyệt báo lỗi AudioWorklet, tải lại trang."; }finally{b.disabled=false;}});
 $("gainSlider").addEventListener("input",()=>{$("gainValue").textContent=$("gainSlider").value+"%";if(gain&&ctx)gain.gain.setTargetAtTime(Number($("gainSlider").value)/100,ctx.currentTime,.02);});
-$("monitorToggle").addEventListener("change",()=>{if(!monitorGain||!ctx){if($("monitorToggle").checked){$("monitorToggle").checked=false;$("micHelp").textContent="Bật micro trước rồi mới bật nghe lại tiếng micro.";}return;}const v=$("monitorToggle").checked?Number($("monitorVolume").value)/100:0;monitorGain.gain.setTargetAtTime(v,ctx.currentTime,.03);$("micHelp").textContent=$("monitorToggle").checked?"Đang phát giọng qua loa/tai nghe. Nếu nghe hú hoặc vang, hãy tắt ngay và dùng tai nghe.":"Đã tắt nghe lại; micro vẫn dò cao độ.";});
+$("monitorToggle").addEventListener("change",()=>{if(!monitorGain||!ctx){if($("monitorToggle").checked){$("monitorToggle").checked=false;$("micHelp").textContent="Bật micro trước rồi mới bật nghe lại tiếng micro.";}return;}monitorGain.gain.setTargetAtTime($("monitorToggle").checked?Number($("monitorVolume").value)/100:0,ctx.currentTime,.03);});
 $("monitorVolume").addEventListener("input",()=>{$("monitorValue").textContent=$("monitorVolume").value+"%";if(monitorGain&&ctx&&$("monitorToggle").checked)monitorGain.gain.setTargetAtTime(Number($("monitorVolume").value)/100,ctx.currentTime,.03);});
+$("autotuneStrength").addEventListener("input",()=>{$("autotuneValue").textContent=$("autotuneStrength").value+"%";sendTuneSettings();});
+$("autotuneToggle").addEventListener("change",()=>{sendTuneSettings();$("autotuneStatus").textContent=$("autotuneToggle").checked?"Auto-Tune đang chỉnh cao độ trực tiếp theo tông và thang âm đã chọn.":"Auto-Tune đã tắt; giọng micro nghe nguyên bản.";});
+$("keySelect").addEventListener("change",sendTuneSettings);
+if($("scaleSelect"))$("scaleSelect").addEventListener("change",sendTuneSettings);
 window.addEventListener("beforeunload",stopMic);
 })();
