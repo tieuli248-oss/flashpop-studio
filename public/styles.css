@@ -302,3 +302,89 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 @media(max-width:700px){
  .micbutton{width:100%;min-height:41px}
 }
+
+
+/* Final layout polish: balanced desktop columns, consistent spacing, mobile-safe controls */
+.grid:not(.lower){
+ display:grid;
+ grid-template-columns:minmax(0,1fr);
+ gap:14px;
+ align-items:start;
+}
+.grid:not(.lower)>.panel{grid-column:1/-1;min-width:0}
+.music-source-panel .music-source-layout{
+ grid-template-columns:minmax(0,1.25fr) minmax(280px,.95fr);
+ gap:16px;
+}
+.music-source-panel .music-player-side,
+.music-source-panel .music-search-side{min-width:0}
+.music-source-panel .music-player-side .video{width:100%;aspect-ratio:16/9;overflow:hidden}
+.music-source-panel .music-search-side .search-results{max-height:330px;min-height:80px}
+.music-source-panel .music-search-side .searchform button{flex-shrink:0}
+.grid:not(.lower)>section.panel:nth-child(2){
+ grid-template-columns:repeat(12,minmax(0,1fr));
+ gap:14px;
+}
+.grid:not(.lower)>section.panel:nth-child(2)>.head{margin-bottom:2px}
+.grid:not(.lower)>section.panel:nth-child(2)>.pitch,
+.grid:not(.lower)>section.panel:nth-child(2)>#micButton,
+.grid:not(.lower)>section.panel:nth-child(2)>#micHelp,
+.grid:not(.lower)>section.panel:nth-child(2)>.device-row,
+.grid:not(.lower)>section.panel:nth-child(2)>.monitor-row{grid-column:span 4}
+.grid:not(.lower)>section.panel:nth-child(2)>.autotune{grid-column:span 6}
+.grid:not(.lower)>section.panel:nth-child(2)>.device-row{align-content:start}
+.grid:not(.lower)>section.panel:nth-child(2)>.device-row .device-note{line-height:1.55}
+.full-controls{margin-top:0}
+.control-groups{
+ grid-template-columns:minmax(130px,2fr) minmax(0,7fr) minmax(180px,3fr);
+ gap:12px;
+}
+.control-groups>.control{grid-column:auto;min-width:0}
+.control-groups>.effects{grid-column:auto;min-width:0}
+.control-groups>.music-controls{grid-column:auto;min-width:0}
+.control-groups>.effects>.control{min-width:0}
+.control-groups>.effects>.control input[type=range],
+.control-groups>.music-controls>.control input[type=range]{width:100%}
+.lower{margin-top:14px}
+.lower>.panel{min-width:0}
+@media(max-width:900px){
+ .music-source-panel .music-source-layout{grid-template-columns:minmax(0,1fr) minmax(250px,.9fr);gap:12px}
+ .control-groups{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .control-groups>.control{grid-column:1/-1}
+ .control-groups>.effects{grid-column:1/-1}
+ .control-groups>.music-controls{grid-column:1/-1}
+}
+@media(max-width:700px){
+ main{padding-left:14px;padding-right:14px}
+ .grid:not(.lower){gap:11px}
+ .music-source-panel .music-source-layout{grid-template-columns:minmax(0,1fr);gap:14px}
+ .music-source-panel .music-player-side{grid-row:1}
+ .music-source-panel .music-search-side{grid-row:2}
+ .music-source-panel .music-search-side .search-results{max-height:280px}
+ .grid:not(.lower)>section.panel:nth-child(2){grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+ .grid:not(.lower)>section.panel:nth-child(2)>.head{grid-column:1/-1}
+ .grid:not(.lower)>section.panel:nth-child(2)>.pitch,
+ .grid:not(.lower)>section.panel:nth-child(2)>#micButton,
+ .grid:not(.lower)>section.panel:nth-child(2)>#micHelp,
+ .grid:not(.lower)>section.panel:nth-child(2)>.device-row,
+ .grid:not(.lower)>section.panel:nth-child(2)>.monitor-row,
+ .grid:not(.lower)>section.panel:nth-child(2)>.autotune{grid-column:1/-1}
+ .grid:not(.lower)>section.panel:nth-child(2)>#micButton{width:100%;min-height:44px}
+ .control-groups{grid-template-columns:minmax(0,1fr);gap:10px}
+ .control-groups>.control,.control-groups>.effects,.control-groups>.music-controls{grid-column:1/-1}
+ .control-groups>.effects{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .control-groups>.effects>.control input[type=range],
+ .control-groups>.music-controls>.control input[type=range]{width:100%;height:14px;min-height:14px}
+ .lower{grid-template-columns:minmax(0,1fr);gap:10px}
+}
+@media(max-width:420px){
+ main{padding-left:10px;padding-right:10px}
+ .panel,.full-controls{padding:12px}
+ .music-source-panel .music-search-side .searchform{display:grid;grid-template-columns:minmax(0,1fr) auto}
+ .music-source-panel .music-search-side .searchform input{width:100%;font-size:14px}
+ .music-source-panel .music-search-side .searchform button{padding:0 10px}
+ .grid:not(.lower)>section.panel:nth-child(2)>.device-row{grid-template-columns:minmax(0,1fr) auto}
+ .grid:not(.lower)>section.panel:nth-child(2)>.device-row label,
+ .grid:not(.lower)>section.panel:nth-child(2)>.device-row .device-note{grid-column:1/-1}
+ .grid:not(.lower)>section.panel:nth-child(2)>.device-row select{min-width:0}
+}
