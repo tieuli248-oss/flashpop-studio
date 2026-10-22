@@ -63,3 +63,53 @@ footer{border-top:1px solid #ffffff0e;margin-top:24px;padding:20px 2px 0}
 .tools.compact-tools{padding:15px}.compact-tools .tools-title{margin-bottom:12px}.compact-tools .upload{padding:12px;margin-bottom:10px;gap:4px}.compact-tools .upload-icon{width:30px;height:30px;font-size:20px;border-radius:10px}.compact-tools .control{margin:12px 0}.compact-tools input[type=range]{margin-top:7px}.compact-tools .tools h3,.compact-tools h3{margin:17px 0 9px}.compact-tools .makeup-option{padding:8px;gap:3px}.compact-tools .quick-preset{padding:7px}.compact-tools .hint{font-size:9px;margin-top:8px}.compact-tools .filters,.compact-tools .makeup-grid{gap:6px}.compact-tools .makeup-palette{margin-top:8px}
 @media(max-width:850px){.tools-title{position:sticky;top:62px;z-index:4;padding:8px 0;background:#1b1625ed;backdrop-filter:blur(12px)}.face-status-row{grid-template-columns:minmax(0,1fr) auto}}
 @media(max-width:480px){.tools-title{top:60px}.tools-title h2{font-size:15px}.tools-title .tiny{padding:7px}.face-status-row{gap:5px}.face-status-row .face-status{font-size:9px;padding:8px}}
+
+
+/* FLASHPOP Studio — polished creative-suite pass */
+:root{--bg:#100d16;--panel:#191521;--line:#30283b;--pink:#ff9ed6;--lav:#c7b1ff;--mint:#a7f3df;--text:#fbf7ff;--muted:#a79caf;--radius:18px}
+body{background:radial-gradient(ellipse at 72% -10%,#422347 0,transparent 38%),radial-gradient(ellipse at 0% 42%,#1d2439 0,transparent 34%),var(--bg);letter-spacing:-.01em}
+.topbar{height:68px;padding-inline:clamp(16px,4vw,56px);background:#100d16dc;border-bottom-color:#ffffff12}
+.brand{letter-spacing:.04em}.brand-mark{display:inline-grid;place-items:center;width:30px;height:30px;border:1px solid #ff9ed655;border-radius:10px;background:#ff9ed611;font-size:20px}
+.local-badge{padding:8px 11px;border:1px solid #a7f3df33;border-radius:999px;background:#a7f3df0b;font-size:9px}
+.ghost,.tiny,.secondary,.filter,.ratio,.mode,.quick-preset{transition:border-color .18s ease,background .18s ease,transform .18s ease,opacity .18s ease}
+button:hover:not(:disabled){transform:translateY(-1px);border-color:#ff9ed688}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--lav);outline-offset:3px}
+.shell{max-width:1600px;padding-top:clamp(22px,3vw,42px);padding-inline:clamp(14px,3vw,44px)}
+.hero{padding-bottom:24px}.eyebrow{font-size:10px;letter-spacing:.16em}.hero h1{font-size:clamp(42px,5vw,68px);letter-spacing:-.075em}.sub{font-size:13px;max-width:500px;color:#c5bacf}
+.hero-orb{flex:0 0 auto;width:76px;height:76px;box-shadow:0 0 70px #ff9bd222, inset 0 1px #ffffff77}
+.mode-tabs{gap:9px;margin-bottom:14px}.mode{border-radius:11px;padding:11px 16px;background:#ffffff04}
+.mode.active{box-shadow:inset 0 0 0 1px #ff9ed61a;background:linear-gradient(110deg,#ff9ed61b,#c7b1ff12)}
+.workspace{grid-template-columns:minmax(270px,320px) minmax(0,1fr);gap:14px}
+.tools,.stage{border-color:#ffffff13;background:linear-gradient(160deg,#211a2beF,#17131ff5);border-radius:16px;box-shadow:0 16px 55px #00000018}
+.tools{padding:18px}.tools-title{position:sticky;top:68px;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:8px;margin:-2px -2px 15px;padding:4px 2px 12px;background:#1b1624f2;backdrop-filter:blur(12px);border-bottom:1px solid #ffffff0c}
+.tools h2{margin:0;font-size:14px;letter-spacing:-.025em}.tools h2 span{font-size:9px;letter-spacing:.12em}
+#compactTools{flex:0 0 auto;padding:6px 8px;font-size:9px}
+.upload{margin-bottom:12px;padding:17px 12px;border-color:#71617e66;background:linear-gradient(135deg,#ff9ed608,#c7b1ff08);gap:6px}
+.upload:hover{border-color:#ff9ed6aa;background:#ff9ed60b}.upload-icon{font-size:22px}
+.tools h3{display:flex;align-items:center;gap:7px;margin:22px 0 10px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#e5d8ef}
+.control{margin:13px 0}.control label{font-size:11px;color:#e8e0ee}.control output{color:var(--mint);font-size:9px}
+input[type=range]{accent-color:var(--pink);cursor:pointer}
+.filter,.ratio,.secondary{border-color:#ffffff16;background:#ffffff04;color:#cfc3d7}
+.filter:hover,.ratio:hover,.secondary:hover{background:#ffffff09}
+.filter.selected,.ratio.selected{background:#ff9ed615;border-color:#ff9ed688;color:var(--pink)}
+.quick-preset{border-color:#ffffff12;background:#ffffff04;padding:11px}.quick-preset small{letter-spacing:0}
+.primary{background:linear-gradient(110deg,#ff9ed6,#c7b1ff);box-shadow:0 8px 28px #ff9ed61b;transition:filter .18s ease,transform .18s ease}
+.primary:hover:not(:disabled){filter:brightness(1.07);transform:translateY(-1px)}
+.camera-launch{margin-bottom:9px;border-color:#ff9ed644;background:linear-gradient(110deg,#ff9ed611,#c7b1ff0b)}
+.face-status-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:stretch}.face-status{margin:0;min-height:38px;display:flex;align-items:center;font-size:9px}.face-status-row .tiny{font-size:9px;padding:6px 8px}
+.stage{min-width:0;min-height:720px}.stage-head,.stage-foot{padding:12px 16px}.stage-head{background:#ffffff02}.stage-head>span:first-child{font-size:9px;letter-spacing:.16em;color:#bcb0c9}
+.stage-quick .tiny{border-radius:9px}.stage-quick #quickExport{box-shadow:0 5px 18px #ff9ed622}
+.canvas-stage{min-height:560px;padding:clamp(12px,2vw,28px);background:radial-gradient(ellipse at center,#30243a 0,#1b1624 68%);isolation:isolate}
+.canvas-stage canvas{border-radius:8px;box-shadow:0 24px 70px #0008,0 0 0 1px #ffffff0b}
+.empty-art{display:grid;place-items:center;width:66px;height:66px;margin:0 auto 14px;border-radius:20px;border:1px solid #ff9ed633;background:linear-gradient(135deg,#ff9ed615,#c7b1ff12);font-size:35px}
+.empty b{font-size:15px;letter-spacing:-.03em}.empty p{line-height:1.7;color:#a99db5}
+.history-bar{background:#1a1522;border-top-color:#ffffff10;padding:10px 14px}.history-bar .tiny{border-radius:9px}
+.stage-foot{color:#968aa3}.stage-foot span:last-child{letter-spacing:.13em}
+.text-input,.text-options select,.export-options select{background:#100d16;border-color:#ffffff18}.text-input:focus,.text-options select:focus{border-color:#ff9ed6aa}
+.makeup-option{border-color:#ffffff12;background:#ffffff03}.makeup-option:focus-within{border-color:#ff9ed655}
+footer{padding-top:24px;color:#857a91}
+.tools.compact-tools{padding:14px}.tools.compact-tools .tools-title{margin-bottom:10px;padding-bottom:8px}.tools.compact-tools .upload{padding:10px;margin-bottom:8px}.tools.compact-tools .upload-icon{font-size:18px}.tools.compact-tools .control{margin:8px 0}.tools.compact-tools input[type=range]{margin-top:7px}.tools.compact-tools h3{margin:15px 0 8px}.tools.compact-tools .hint{font-size:9px;line-height:1.5}.tools.compact-tools .quick-preset{padding:8px}.tools.compact-tools .makeup-option{padding:7px}.tools.compact-tools .filters{gap:5px}
+@media(min-width:851px){.workspace{align-items:start}.tools{max-height:calc(100vh - 92px);overflow:auto;scrollbar-width:thin;scrollbar-color:#5b4b68 transparent}.tools::-webkit-scrollbar{width:5px}.tools::-webkit-scrollbar-thumb{background:#5b4b68;border-radius:10px}.stage{position:sticky;top:82px;max-height:calc(100vh - 96px);min-height:620px}.canvas-stage{min-height:0;flex:1}.canvas-stage canvas{max-height:calc(100vh - 230px)}}
+@media(max-width:850px){.workspace{grid-template-columns:minmax(0,1fr)}.stage{position:relative;top:auto;max-height:none;min-height:430px}.tools{max-height:none;overflow:visible}.tools-title{top:60px}.canvas-stage{min-height:340px}}
+@media(max-width:480px){.topbar{height:58px}.shell{padding-top:20px}.hero-orb{width:54px;height:54px;font-size:24px}.hero-orb small{margin-top:38px}.mode-tabs{position:sticky;top:58px;z-index:6;padding:6px 0;background:#100d16e8;backdrop-filter:blur(12px)}.workspace{gap:10px}.stage{border-radius:14px;min-height:350px}.stage-head{padding:9px}.canvas-stage{min-height:270px;padding:10px}.tools{padding:14px}.tools-title{top:58px}.tools h2{font-size:13px}.face-status-row{grid-template-columns:minmax(0,1fr) auto}.face-status{font-size:8px;padding:7px}.camera-launch{padding:11px}.quick-presets{gap:5px}.quick-preset{min-height:56px}.history-bar{bottom:0}.stage-foot{padding:10px}.stage-foot span:first-child{font-size:8px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
