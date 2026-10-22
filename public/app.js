@@ -76,8 +76,8 @@ async function openCamera(){$('cameraDialog').hidden=false;$('cameraStatus').tex
  const anchor=document.querySelector('.face-status-row');if(!anchor)return;
  const nav=document.createElement('nav');nav.className='studio-tool-tabs';nav.setAttribute('aria-label','Nhóm công cụ chỉnh ảnh');
  const host=document.createElement('div');host.className='studio-tool-panes';
- const defs=[['adjust','Điều chỉnh'],['beauty','Làm đẹp'],['filters','Bộ lọc'],['creative','Chữ & Sticker'],['export','Xuất ảnh']];
- defs.forEach(([id,label])=>{const b=document.createElement('button');b.type='button';b.className='studio-tool-tab';b.dataset.toolTab=id;b.textContent=label;b.setAttribute('aria-selected','false');nav.appendChild(b);const p=document.createElement('section');p.className='studio-tool-pane';p.dataset.toolPane=id;p.hidden=true;host.appendChild(p)});
+ const defs=[['adjust','Điều chỉnh','☷'],['beauty','Làm đẹp','✿'],['filters','Bộ lọc','◐'],['creative','Sáng tạo','✎'],['export','Xuất ảnh','⇧']];
+ defs.forEach(([id,label,icon])=>{const b=document.createElement('button');b.type='button';b.className='studio-tool-tab';b.dataset.toolTab=id;b.innerHTML='<span class="tool-tab-icon" aria-hidden="true">'+icon+'</span><span class="tool-tab-label">'+label+'</span>';b.setAttribute('aria-selected','false');nav.appendChild(b);const p=document.createElement('section');p.className='studio-tool-pane';p.dataset.toolPane=id;p.hidden=true;host.appendChild(p)});
  anchor.insertAdjacentElement('afterend',nav);nav.insertAdjacentElement('afterend',host);
  const panes=Object.fromEntries([...host.children].map(p=>[p.dataset.toolPane,p]));
  const classify=t=>{t=(t||'').toLowerCase();if(t.includes('makeup'))return 'beauty';if(t.includes('mood'))return 'filters';if(t.includes('sticker')||t.includes('typography')||t.includes('chèn chữ'))return 'creative';if(t.includes('xuất')||t.includes('export'))return 'export';return 'adjust'};
