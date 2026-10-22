@@ -536,3 +536,76 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
  .full-controls .studio-vocal-controls .monitor-row{grid-template-columns:minmax(0,1fr)}
  .full-controls .autotune{grid-template-columns:minmax(0,1fr)}
 }
+
+
+/* Slider bug fix: reset legacy vertical range styling inside the unified console */
+.full-controls input[type="range"],
+.full-controls .control input[type="range"],
+.full-controls .volume-control input[type="range"]{
+ display:block;
+ box-sizing:border-box;
+ width:100%;
+ min-width:0;
+ height:18px;
+ min-height:18px;
+ margin:8px 0 2px;
+ padding:0;
+ writing-mode:horizontal-tb!important;
+ direction:ltr!important;
+ appearance:auto!important;
+ -webkit-appearance:auto!important;
+ accent-color:var(--pink);
+ cursor:pointer;
+ touch-action:pan-x;
+}
+.full-controls .control:has(>input[type="range"]){
+ display:flex;
+ flex-direction:column;
+ align-items:stretch;
+ min-width:0;
+}
+.full-controls .control:has(>input[type="range"])>div{
+ display:flex;
+ flex-direction:row;
+ justify-content:space-between;
+ align-items:center;
+ gap:8px;
+ min-height:0;
+ margin:0;
+}
+.full-controls .control:has(>input[type="range"])>div b{
+ max-width:none;
+ line-height:1.35;
+}
+.full-controls .studio-vocal-controls .volume-control{
+ display:grid;
+ grid-template-columns:minmax(0,1fr) auto;
+ align-items:center;
+ gap:6px 10px;
+ min-width:0;
+}
+.full-controls .studio-vocal-controls .volume-control input[type="range"]{
+ grid-column:1/-1;
+ grid-row:auto;
+ margin:2px 0 0;
+ width:100%;
+}
+.full-controls .control-groups>.effects>.control input[type="range"],
+.full-controls .control-groups>.music-controls>.control input[type="range"],
+.full-controls .autotune .control input[type="range"]{
+ width:100%;
+ height:18px;
+ min-height:18px;
+}
+@media(max-width:999px){
+ .full-controls .control-groups>.control input[type="range"],
+ .full-controls .control-groups>.effects>.control input[type="range"],
+ .full-controls .control-groups>.music-controls>.control input[type="range"],
+ .full-controls .studio-vocal-controls input[type="range"],
+ .full-controls .autotune .control input[type="range"]{
+  width:100%;
+  height:20px;
+  min-height:20px;
+  margin:8px 0 2px;
+ }
+}
