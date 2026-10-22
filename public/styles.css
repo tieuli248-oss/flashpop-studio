@@ -698,3 +698,78 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   margin:8px auto 2px!important;
  }
 }
+
+
+/* Compact vertical mixer: smaller footprint while preserving up/down sliders */
+@media(min-width:1000px){
+ .full-controls{padding:11px 13px}
+ .full-controls>.head{margin-bottom:8px}
+ .full-controls .control-groups{gap:8px}
+ .full-controls .control-groups>.control,
+ .full-controls .control-groups>.effects,
+ .full-controls .control-groups>.music-controls{padding:8px;gap:6px}
+ .full-controls .control-groups>.effects{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+ .full-controls .control-groups>.effects>.tone-title,
+ .full-controls .control-groups>.effects>p,
+ .full-controls .control-groups>.effects>.toggle{grid-column:1/-1}
+ .full-controls .control-groups>.effects>.control{padding:5px 3px;gap:3px}
+ .full-controls .control-groups>.effects>.control b,
+ .full-controls .control-groups>.music-controls>.control b,
+ .full-controls .control-groups>.control b{font-size:9px;line-height:1.25}
+ .full-controls .control-groups>.effects>.control output,
+ .full-controls .control-groups>.music-controls>.control output,
+ .full-controls .control-groups>.control output{font-size:9px}
+ .full-controls .control-groups>.effects>.control input[type="range"],
+ .full-controls .control-groups>.music-controls>.control input[type="range"],
+ .full-controls .control-groups>.control input[type="range"]{height:76px!important;min-height:76px!important;width:20px!important;min-width:20px;margin:5px auto 0!important}
+ .full-controls .control-groups>.studio-vocal-controls{padding:7px 9px}
+ .full-controls .studio-vocal-controls .tone-title{margin-bottom:4px}
+ .full-controls .studio-vocal-controls .monitor-row{grid-template-columns:minmax(0,1fr) auto;gap:8px}
+ .full-controls .studio-vocal-controls .toggle b{font-size:10px}
+ .full-controls .studio-vocal-controls .toggle small{font-size:8px}
+ .full-controls .studio-vocal-controls .volume-control{font-size:9px}
+ .full-controls .studio-vocal-controls .volume-control input[type="range"]{height:76px!important;min-height:76px!important;width:20px!important;min-width:20px}
+ .full-controls .autotune{padding:8px 10px;gap:6px 10px}
+ .full-controls .autotune p{font-size:9px;line-height:1.4;margin:4px 0}
+ .full-controls .autotune .autotune-toggle{padding:6px;margin:3px 0}
+ .full-controls .autotune .control{padding-top:6px;margin-top:5px}
+ .full-controls .autotune .control input[type="range"]{height:76px!important;min-height:76px!important;width:20px!important;min-width:20px;margin:5px auto 0!important}
+ .full-controls .effects p{font-size:8px;line-height:1.4;margin:4px 0}
+ .full-controls .control-groups>.effects>.toggle{font-size:9px}
+}
+@media(max-width:999px){
+ .full-controls{padding:12px}
+ .full-controls .control-groups{gap:8px}
+ .full-controls .control-groups>.control,
+ .full-controls .control-groups>.effects,
+ .full-controls .control-groups>.music-controls,
+ .full-controls .control-groups>.studio-vocal-controls,
+ .full-controls .control-groups>.autotune{padding:9px;margin:0}
+ .full-controls .control-groups>.effects{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+ .full-controls .control-groups>.effects>.tone-title,
+ .full-controls .control-groups>.effects>p,
+ .full-controls .control-groups>.effects>.toggle{grid-column:1/-1}
+ .full-controls .control-groups>.effects>.control{padding:6px 4px}
+ .full-controls .control-groups>.effects>.control b,
+ .full-controls .control-groups>.music-controls>.control b,
+ .full-controls .control-groups>.control b{font-size:10px}
+ .full-controls .control-groups>.effects>.control input[type="range"],
+ .full-controls .control-groups>.music-controls>.control input[type="range"],
+ .full-controls .control-groups>.control input[type="range"],
+ .full-controls .studio-vocal-controls .volume-control input[type="range"],
+ .full-controls .autotune .control input[type="range"]{height:84px!important;min-height:84px!important;width:22px!important;min-width:22px;margin:6px auto 0!important}
+ .full-controls .studio-vocal-controls .monitor-row{grid-template-columns:minmax(0,1fr) auto;gap:8px}
+ .full-controls .studio-vocal-controls .volume-control{font-size:10px}
+}
+@media(max-width:520px){
+ .full-controls .control-groups>.effects{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .full-controls .control-groups>.effects>.control{padding:7px}
+ .full-controls .control-groups>.effects>.control input[type="range"],
+ .full-controls .control-groups>.music-controls>.control input[type="range"],
+ .full-controls .control-groups>.control input[type="range"],
+ .full-controls .studio-vocal-controls .volume-control input[type="range"],
+ .full-controls .autotune .control input[type="range"]{height:76px!important;min-height:76px!important}
+ .full-controls .studio-vocal-controls .monitor-row{grid-template-columns:minmax(0,1fr)}
+ .full-controls .studio-vocal-controls .volume-control{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center}
+ .full-controls .studio-vocal-controls .volume-control input[type="range"]{grid-column:1/-1}
+}
