@@ -28,14 +28,16 @@ function draw(){if(!image)return;const v=values(),swap=angle%180!==0;const sourc
    faceWarpBusy=true;
    const w0=canvas.width,h0=canvas.height;
    const src=ctx.getImageData(0,0,w0,h0),srcData=src.data;
-   const out=ctx.createImageData(w0,h0),dst=out.data;
+   const out=ctx.createImageData(w0,h0),dst=out.data;dst.set(srcData);
    const pt=i=>({x:faceLandmarks[i].x*w0,y:faceLandmarks[i].y*h0});
    const nose0=pt(1),eyeL0=pt(468 in faceLandmarks?468:33),eyeR0=pt(473 in faceLandmarks?473:263);
-   const cheekL0=pt(234),cheekR0=pt(454);
-   const faceW=Math.max(1,Math.abs(cheekR0.x-cheekL0.x)),sigmaX=faceW*.19,sigmaY=h0*.20;
+   const cheekL0=pt(234),cheekR0=pt(454),forehead0=pt(10),chin0=pt(152);
+   const faceW=Math.max(1,Math.abs(cheekR0.x-cheekL0.x)),sigmaX=faceW*.19,sigmaY=Math.max(1,Math.abs(chin0.y-forehead0.y)*.42);
    const slimK=slim/100*.48,eyeK=eyeBoost/100*.42;
-   for(let y=0;y<h0;y++){
-    for(let x=0;x<w0;x++){
+   const x0=Math.max(0,Math.floor(Math.min(cheekL0.x,cheekR0.x)-faceW*.16)),x1=Math.min(w0,Math.ceil(Math.max(cheekL0.x,cheekR0.x)+faceW*.16));
+   const y0=Math.max(0,Math.floor(forehead0.y-faceW*.12)),y1=Math.min(h0,Math.ceil(chin0.y+faceW*.08));
+   for(let y=y0;y<y1;y++){
+    for(let x=x0;x<x1;x++){
      let sx=x,sy=y;
      if(slimK){
       const gy=Math.exp(-Math.pow((y-nose0.y)/sigmaY,2));
