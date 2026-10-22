@@ -32,11 +32,11 @@ class KaraokeTuneProcessor extends AudioWorkletProcessor{
   this.port.onmessage=e=>{const d=e.data||{};if(d.root!==undefined)this.root=d.root;if(d.scale!==undefined)this.scale=d.scale;if(d.strength!==undefined)this.strength=d.strength;if(d.enabled!==undefined)this.enabled=d.enabled;if(d.speed!==undefined)this.speed=d.speed;};
  }
  detect(){
-  const n=512;let energy=0;for(let i=0;i<n;i++)energy+=this.buf[i]*this.buf[i];
+  const n=512,offset=512;let energy=0;for(let i=0;i<n;i++)energy+=this.buf[offset+i]*this.buf[offset+i];
   if(energy/n<0.00002){if(++this.silence>5){this.lock=-1;this.targetRatio=1;}return;}
   this.silence=0;let bestTau=-1,best=Infinity;
   for(let tau=24;tau<Math.min(400,n/2);tau++){
-   let diff=0;for(let j=0;j<n-tau;j++){const d=this.buf[j]-this.buf[j+tau];diff+=d*d;}
+   let diff=0;for(let j=0;j<n-tau;j++){const d=this.buf[offset+j]-this.buf[offset+j+tau];diff+=d*d;}
    diff/=n-tau;
    if(diff<best){best=diff;bestTau=tau;}
   }
