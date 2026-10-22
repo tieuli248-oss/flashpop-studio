@@ -388,3 +388,101 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
  .grid:not(.lower)>section.panel:nth-child(2)>.device-row .device-note{grid-column:1/-1}
  .grid:not(.lower)>section.panel:nth-child(2)>.device-row select{min-width:0}
 }
+
+
+/* FlashPop Studio — compact professional desktop dashboard */
+@media(min-width:1000px){
+ body{overflow-x:hidden}
+ header{height:54px}
+ main{max-width:1440px;padding:0 22px}
+ .hero{padding:17px 0 14px;max-width:none}
+ .eyebrow{font-size:8px;letter-spacing:1.2px}
+ h1{font-size:31px;letter-spacing:-1.2px;margin:5px 0}
+ .hero p{font-size:11px;line-height:1.45}
+ .tags{margin-top:8px;gap:6px}
+ .tags span{padding:4px 7px}
+ .grid:not(.lower){
+  grid-template-columns:minmax(0,1.12fr) minmax(390px,.88fr);
+  gap:12px;
+ }
+ .grid:not(.lower)>.music-source-panel{grid-column:1;grid-row:1}
+ .grid:not(.lower)>section.panel:nth-child(2){grid-column:2;grid-row:1;display:flex;flex-direction:column;gap:9px;padding:15px}
+ .grid:not(.lower)>.full-controls{grid-column:1/-1;grid-row:2;padding:13px 15px}
+ .music-source-panel{padding:15px}
+ .music-source-panel .head,.grid:not(.lower)>section.panel:nth-child(2)>.head,.full-controls>.head{margin-bottom:7px}
+ .music-source-panel .music-source-layout{grid-template-columns:minmax(0,1fr);gap:8px}
+ .music-source-panel .music-player-side .video{aspect-ratio:16/7;max-height:205px}
+ .music-source-panel .music-player-side .foot{margin-top:6px}
+ .music-source-panel .music-search-side .searchform input{min-height:36px;padding:8px 10px}
+ .music-source-panel .music-search-side .searchform button{min-height:36px;padding:0 12px}
+ .music-source-panel .music-search-side .hint{margin:5px 0;font-size:9px}
+ .music-source-panel .music-search-side .search-results{max-height:142px;min-height:0;margin:5px 0 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+ .music-source-panel .music-search-side .result{min-width:0;min-height:49px;padding:4px;gap:6px}
+ .music-source-panel .music-search-side .result img{width:60px;height:34px}
+ .music-source-panel .music-search-side .result-copy b{font-size:9px;-webkit-line-clamp:2}
+ .music-source-panel .music-search-side .result-copy small{font-size:8px}
+ .music-source-panel .music-search-side .result-duration{display:none}
+ .grid:not(.lower)>section.panel:nth-child(2)>.head{margin:0}
+ .grid:not(.lower)>section.panel:nth-child(2)>.pitch{display:none!important}
+ .grid:not(.lower)>section.panel:nth-child(2)>#micButton{width:110px;min-height:38px}
+ .grid:not(.lower)>section.panel:nth-child(2)>#micHelp{font-size:9px;line-height:1.45;margin:0}
+ .grid:not(.lower)>section.panel:nth-child(2)>.device-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;margin:0;padding:8px}
+ .grid:not(.lower)>section.panel:nth-child(2)>.device-row label,.grid:not(.lower)>section.panel:nth-child(2)>.device-row .device-note{grid-column:1/-1;font-size:9px}
+ .grid:not(.lower)>section.panel:nth-child(2)>.device-row select,.grid:not(.lower)>section.panel:nth-child(2)>.device-row button{min-height:34px;padding:7px;font-size:10px}
+ .grid:not(.lower)>section.panel:nth-child(2)>.monitor-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(70px,.45fr);gap:8px;padding:9px;margin:0}
+ .grid:not(.lower)>section.panel:nth-child(2)>.monitor-row .volume-control{min-height:110px;font-size:9px}
+ .grid:not(.lower)>section.panel:nth-child(2)>.monitor-row #monitorVolume{height:75px;min-height:75px}
+ .grid:not(.lower)>section.panel:nth-child(2)>.autotune{margin:0;padding:10px}
+ .grid:not(.lower)>section.panel:nth-child(2)>.autotune h3{font-size:13px}
+ .grid:not(.lower)>section.panel:nth-child(2)>.autotune p{font-size:9px;line-height:1.45;margin:6px 0}
+ .grid:not(.lower)>section.panel:nth-child(2)>.autotune .control{margin-top:7px}
+ .grid:not(.lower)>section.panel:nth-child(2)>.autotune .control input[type=range]{width:100%;height:14px;min-height:14px}
+ .grid:not(.lower)>section.panel:nth-child(2)>.autotune .toggle{padding:7px;margin:7px 0 0}
+ .control-groups{grid-template-columns:minmax(125px,1.1fr) minmax(0,2.4fr) minmax(145px,1.2fr);gap:9px}
+ .control-groups>.control,.control-groups>.effects,.control-groups>.music-controls{padding:9px;margin:0}
+ .control-groups>.effects{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+ .control-groups>.effects>.control{padding:6px;gap:4px}
+ .control-groups>.effects>.control b,.control-groups>.music-controls>.control b{font-size:10px}
+ .control-groups>.effects>.control input[type=range],.control-groups>.music-controls>.control input[type=range]{height:12px;min-height:12px}
+ .control-groups>.effects>p{font-size:8px;line-height:1.35;margin:4px 0}
+ .control-groups>.effects>.toggle{font-size:9px;gap:6px}
+ .control-groups>.music-controls>.control{padding:7px}
+ .control-groups .control input[type=range]{height:90px;min-height:90px}
+ .lower{margin-top:9px;gap:10px}
+ .lower>.panel{padding:10px}
+ .lower ol{margin:7px 0}
+ .lower li{padding:5px 0}
+ footer{padding:8px 0 10px}
+}
+@media(min-width:1000px) and (max-height:850px){
+ .hero{padding-top:10px;padding-bottom:8px}
+ .hero p{display:none}
+ .tags{margin-top:6px}
+ .grid:not(.lower){gap:9px}
+ .grid:not(.lower)>.music-source-panel,.grid:not(.lower)>section.panel:nth-child(2){padding:11px}
+ .music-source-panel .music-player-side .video{max-height:170px}
+ .music-source-panel .music-search-side .search-results{max-height:110px}
+ .grid:not(.lower)>section.panel:nth-child(2)>.device-row .device-note{display:none}
+ .grid:not(.lower)>section.panel:nth-child(2)>.autotune p{display:none}
+ .control-groups>.control,.control-groups>.effects,.control-groups>.music-controls{padding:7px}
+ .control-groups .control input[type=range]{height:72px;min-height:72px}
+ .lower{display:none}
+}
+@media(max-width:999px){
+ .grid:not(.lower){grid-template-columns:minmax(0,1fr)}
+ .grid:not(.lower)>.music-source-panel,
+ .grid:not(.lower)>section.panel:nth-child(2),
+ .grid:not(.lower)>.full-controls{grid-column:1/-1;grid-row:auto}
+ .music-source-panel .music-source-layout{grid-template-columns:minmax(0,1fr)}
+ .music-source-panel .music-player-side{grid-row:1}
+ .music-source-panel .music-search-side{grid-row:2}
+ .music-source-panel .music-search-side .search-results{max-height:250px;grid-template-columns:minmax(0,1fr)}
+ .grid:not(.lower)>section.panel:nth-child(2){display:block}
+ .grid:not(.lower)>section.panel:nth-child(2)>*{margin-top:11px}
+ .grid:not(.lower)>section.panel:nth-child(2)>.head{margin-top:0}
+ .grid:not(.lower)>section.panel:nth-child(2)>#micButton{width:100%;min-height:44px}
+ .control-groups{grid-template-columns:minmax(0,1fr)}
+ .control-groups>.control,.control-groups>.effects,.control-groups>.music-controls{grid-column:1/-1}
+ .control-groups>.effects{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .lower{grid-template-columns:minmax(0,1fr)}
+}
