@@ -295,8 +295,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 }
 
 
-/* Microphone button sizing */
-.micbutton{
- width:110px;
- min-height:41px;
+/* Microphone button sizing: desktop only; preserve mobile width */
+@media(min-width:701px){
+ .micbutton{width:110px;min-height:41px}
+}
+@media(max-width:700px){
+ .micbutton{width:100%;min-height:41px}
 }
