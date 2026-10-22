@@ -3,7 +3,7 @@
 A browser-first photo editor and video preview workspace with a Y2K pastel interface.
 
 ## Features
-- Photo upload, brightness, contrast, saturation, warmth, preset looks, rotate/flip, PNG export.
+- Photo upload, brightness, contrast, saturation, warmth, vignette, preset looks, rotate/flip, text captions, PNG/JPG export, and press-to-compare preview.
 - Video preview, playback speed, aspect-ratio presets and previewing a selected time range.
 - Responsive desktop and mobile layouts.
 - Photo editing runs locally in the browser.
