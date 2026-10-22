@@ -220,3 +220,32 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
  .grid:not(.lower)>section.panel:nth-child(2)>.monitor-row{display:flex}
  .grid:not(.lower)>section.panel:nth-child(2)>.monitor-row .volume-control{min-height:150px}
 }
+
+
+/* Compact vocal-effect and music-control tiles */
+.control-groups>.effects,
+.control-groups>.music-controls{padding:12px;gap:8px}
+.control-groups>.effects>.tone-title,
+.control-groups>.music-controls>.tone-title{margin-bottom:4px}
+.control-groups>.effects>.control,
+.control-groups>.music-controls>.control{padding:8px 10px;margin:0;gap:8px;min-width:0}
+.control-groups>.effects>.control>div,
+.control-groups>.music-controls>.control>div{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:0}
+.control-groups>.effects>.control b,
+.control-groups>.music-controls>.control b{font-size:12px;line-height:1.2}
+.control-groups>.effects>.control output,
+.control-groups>.music-controls>.control output{font-size:11px;white-space:nowrap}
+.control-groups>.effects>.control input[type=range],
+.control-groups>.music-controls>.control input[type=range]{margin:4px 0 0;min-height:14px;height:14px}
+.control-groups>.effects{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}
+.control-groups>.effects>.tone-title,
+.control-groups>.effects>p,
+.control-groups>.effects>.toggle{grid-column:1/-1}
+.control-groups>.effects>.control{min-width:0}
+.control-groups>.effects>.control input[type=range]{width:100%}
+.control-groups>.music-controls{display:flex;flex-direction:column;align-items:stretch}
+@media(max-width:520px){
+ .control-groups>.effects{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .control-groups>.effects>.control{padding:7px}
+ .control-groups>.effects>.control b{font-size:11px}
+}
