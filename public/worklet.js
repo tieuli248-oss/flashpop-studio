@@ -26,7 +26,7 @@ class GrainPitchShifter{
 }
 class KaraokeTuneProcessor extends AudioWorkletProcessor{
  constructor(){
-  super();this.buf=new Float32Array(1024);this.chunk=new Float32Array(128);this.hop=128;this.pos=0;this.shifter=new GrainPitchShifter();
+  super();this.buf=new Float32Array(1024);this.chunk=new Float32Array(1024);this.hop=1024;this.pos=0;this.shifter=new GrainPitchShifter();
   this.root=0;this.scale=1;this.strength=75;this.enabled=true;this.speed=18;
   this.detected=-1;this.corrected=-1;this.targetRatio=1;this.ratio=1;this.lock=-1;this.silence=0;this.count=0;
   this.port.onmessage=e=>{const d=e.data||{};if(d.root!==undefined)this.root=d.root;if(d.scale!==undefined)this.scale=d.scale;if(d.strength!==undefined)this.strength=d.strength;if(d.enabled!==undefined)this.enabled=d.enabled;if(d.speed!==undefined)this.speed=d.speed;};
