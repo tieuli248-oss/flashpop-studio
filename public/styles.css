@@ -16,3 +16,5 @@
 .audio-file-name{margin-top:8px;padding:9px 10px;border-radius:8px;background:#0e081a;color:var(--muted);font-size:10px;overflow-wrap:anywhere}
 .tone-help{font-size:10px;line-height:1.7;color:var(--muted)}
 .capture-audio-button{width:100%;min-height:43px;margin:4px 0 8px;background:linear-gradient(110deg,#9fffd5,#8fe8ff);color:#17112a}
+
+.feedback-pro{margin-top:14px;padding:13px;border:1px solid #f2a7ca55;border-radius:14px;background:linear-gradient(135deg,#f2a7ca0d,#a0dbf20a)}.feedback-pro-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.feedback-pro-head b{font-size:.9rem}.feedback-pro-head span{font-size:.65rem;letter-spacing:.08em;color:#a0dbf2}.feedback-pro p{font-size:.78rem;line-height:1.5;color:var(--muted,#b8b2ca)}.feedback-pro .toggle{display:flex;gap:10px;align-items:center}
