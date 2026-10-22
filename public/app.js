@@ -19,7 +19,7 @@ searchForm.addEventListener("submit",e=>{e.preventDefault();const q=queryInput.v
 resultsBox.addEventListener("click",e=>{const b=e.target.closest("[data-video]");if(!b)return;const id=b.dataset.video;if(!/^[\w-]{11}$/.test(id)){msg.textContent="Kết quả không có mã video hợp lệ.";return;}loadVideo(id);});
 urlForm.addEventListener("submit",e=>{e.preventDefault();const id=videoId(urlInput.value.trim());if(!id||!/^[\w-]{11}$/.test(id)){msg.textContent="Link chưa đúng. Dán link youtube.com/watch?v=… hoặc youtu.be/…";return;}loadVideo(id);});
 function noteFromMidi(m){const names=["Đô","Đô♯","Rê","Rê♯","Mi","Fa","Fa♯","Sol","Sol♯","La","La♯","Si"];return names[((m%12)+12)%12]+(Math.floor(m/12)-1);}
-let tuneNode=null,detectedNote=-1,correctedNote=-1,bassFilter=null,echoDelay=null,echoFeedback=null,echoWet=null;
+let tuneNode=null,detectedNote=-1,correctedNote=-1,bassFilter=null,echoDelay=null,echoFeedback=null,echoWet=null,feedbackAnalyser=null,feedbackNotches=[],feedbackTimer=null,feedbackCandidates={},feedbackLastUpdate=0;
 function sendTuneSettings(){
  if(!tuneNode)return;
  const root=Math.max(0,Math.min(11,$("keySelect").selectedIndex));
@@ -40,7 +40,14 @@ async function startMic(){
  source.connect(gain);gain.connect(tuneNode);tuneNode.connect(analyser);
  bassFilter=ctx.createBiquadFilter();bassFilter.type="lowshelf";bassFilter.frequency.value=180;bassFilter.gain.value=0;
  echoDelay=ctx.createDelay(1.2);echoDelay.delayTime.value=0.24;echoFeedback=ctx.createGain();echoWet=ctx.createGain();echoFeedback.gain.value=0.18;echoWet.gain.value=0;
- tuneNode.connect(bassFilter);bassFilter.connect(monitorGain);bassFilter.connect(echoDelay);echoDelay.connect(echoWet);echoWet.connect(monitorGain);echoDelay.connect(echoFeedback);echoFeedback.connect(echoDelay);monitorGain.connect(ctx.destination);
+ tuneNode.connect(bassFilter);
+ feedbackAnalyser=ctx.createAnalyser();feedbackAnalyser.fftSize=8192;feedbackAnalyser.smoothingTimeConstant=0;
+ bassFilter.connect(feedbackAnalyser);
+ let last=feedbackAnalyser;
+ feedbackNotches=[];
+ for(let i=0;i<3;i++){const n=ctx.createBiquadFilter();n.type="notch";n.frequency.value=1000+i*700;n.Q.value=12;feedbackNotches.push(n);last.connect(n);last=n;}
+ last.connect(monitorGain);bassFilter.connect(echoDelay);echoDelay.connect(echoWet);echoWet.connect(monitorGain);echoDelay.connect(echoFeedback);echoFeedback.connect(echoDelay);monitorGain.connect(ctx.destination);
+ startFeedbackGuard();
  updateEffects();
  sendTuneSettings();
  if($("monitorToggle").checked)monitorGain.gain.setTargetAtTime(Number($("monitorVolume").value)/100,ctx.currentTime,.03);
@@ -51,7 +58,7 @@ function tick(){}
 function stopMic(){
  if(stream)stream.getTracks().forEach(t=>t.stop());
  if(ctx&&ctx.state!=="closed")ctx.close().catch(()=>{});
- stream=ctx=source=gain=analyser=monitorGain=tuneNode=bassFilter=echoDelay=echoFeedback=echoWet=null;detectedNote=correctedNote=-1;
+ if(feedbackTimer)clearInterval(feedbackTimer);feedbackTimer=null;feedbackAnalyser=null;feedbackNotches=[];feedbackCandidates={};stream=ctx=source=gain=analyser=monitorGain=tuneNode=bassFilter=echoDelay=echoFeedback=echoWet=null;detectedNote=correctedNote=-1;
  $("monitorToggle").checked=false;$("micStatus").textContent="CHƯA KẾT NỐI";$("micStatus").classList.remove("active");$("micButton").classList.remove("enabled");$("micButton").textContent="🎤 Bật micro";
  $("noteName").textContent="—";$("frequency").textContent="— Hz";$("noteDescription").textContent="Bật micro để dò nốt";$("tunerNeedle").style.left="50%";
  $("micHelp").textContent="Auto-Tune cần HTTPS hoặc localhost và quyền micro. Đeo tai nghe khi bật nghe giọng.";
@@ -137,6 +144,31 @@ $("analyzeYouTubeTone").addEventListener("click",async()=>{
   },250);
  }catch(e){finishTabCapture();$("toneStatus").textContent="CHƯA THỂ DÒ";$("toneHelp").textContent=e.message||"Không thể lấy âm thanh tab. Thử lại hoặc dùng file nhạc.";$("analyzeYouTubeTone").textContent="▶ Dò âm thanh tab đang phát";}
 });
+function startFeedbackGuard(){
+ if(feedbackTimer)clearInterval(feedbackTimer);
+ const status=$("feedbackStatus");if(status)status.textContent=$("feedbackToggle").checked?"ĐANG GIÁM SÁT":"ĐÃ TẮT";
+ feedbackTimer=setInterval(()=>{
+  if(!ctx||!feedbackAnalyser||!feedbackNotches.length||!$("feedbackToggle").checked){if(status)status.textContent=$("feedbackToggle").checked?"CHỜ MICRO":"ĐÃ TẮT";return;}
+  const spectrum=new Float32Array(feedbackAnalyser.frequencyBinCount);feedbackAnalyser.getFloatFrequencyData(spectrum);
+  const sr=ctx.sampleRate,fft=feedbackAnalyser.fftSize,candidates=[];
+  for(let i=Math.ceil(250*fft/sr);i<Math.min(spectrum.length-5,Math.floor(4800*fft/sr));i++){
+   const v=spectrum[i];if(!Number.isFinite(v)||v<-62)continue;
+   let side=-120;for(let d=2;d<=5;d++)side=Math.max(side,spectrum[i-d],spectrum[i+d]);
+   if(v-side>=8&&v>=spectrum[i-1]&&v>=spectrum[i+1])candidates.push({freq:i*sr/fft,score:v-side+Math.max(0,v+45)*.08});
+  }
+  candidates.sort((a,b)=>b.score-a.score);
+  const now=Date.now(),picked=[];
+  for(const c of candidates){if(picked.every(p=>Math.abs(p.freq-c.freq)>Math.max(90,c.freq*.045)))picked.push(c);if(picked.length===3)break;}
+  for(const c of picked){const key=Math.round(c.freq/35),prev=feedbackCandidates[key]||{count:0,last:0,freq:c.freq};prev.count=now-prev.last<700?prev.count+1:1;prev.last=now;prev.freq=c.freq;feedbackCandidates[key]=prev;}
+  if(now-feedbackLastUpdate>1200){
+   const stable=Object.values(feedbackCandidates).filter(x=>x.count>=4&&now-x.last<1400).sort((a,b)=>b.count-a.count).slice(0,3);
+   stable.forEach((x,i)=>{if(feedbackNotches[i]){feedbackNotches[i].frequency.setTargetAtTime(Math.max(200,Math.min(5000,x.freq)),ctx.currentTime,.08);feedbackNotches[i].Q.setTargetAtTime(16,ctx.currentTime,.08);}});
+   feedbackLastUpdate=now;
+  }
+  for(const k of Object.keys(feedbackCandidates))if(now-feedbackCandidates[k].last>4000)delete feedbackCandidates[k];
+  if(status)status.textContent=picked.length?"ĐANG THEO DÕI ĐỈNH TẦN SỐ":"TÍN HIỆU ỔN ĐỊNH";
+ },250);
+}
 function updateEffects(){
  const echo=Number($("echoSlider").value)/100,bass=Number($("bassSlider").value),delayMs=Number($("delaySlider").value);
  $("echoValue").textContent=$("echoSlider").value+"%";$("bassValue").textContent=$("bassSlider").value+"%";$("delayValue").textContent=delayMs+" ms";
@@ -150,6 +182,6 @@ $("echoSlider").addEventListener("input",updateEffects);
 $("delaySlider").addEventListener("input",updateEffects);
 $("bassSlider").addEventListener("input",updateEffects);
 updateEffects();
-
+if($("feedbackToggle"))$("feedbackToggle").addEventListener("change",()=>{if($("feedbackStatus"))$("feedbackStatus").textContent=$("feedbackToggle").checked?"ĐANG GIÁM SÁT":"ĐÃ TẮT";});
 window.addEventListener("beforeunload",stopMic);
 })();
