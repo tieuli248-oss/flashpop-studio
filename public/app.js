@@ -19,7 +19,7 @@ searchForm.addEventListener("submit",e=>{e.preventDefault();const q=queryInput.v
 resultsBox.addEventListener("click",e=>{const b=e.target.closest("[data-video]");if(!b)return;const id=b.dataset.video;if(!/^[\w-]{11}$/.test(id)){msg.textContent="Kết quả không có mã video hợp lệ.";return;}loadVideo(id);});
 urlForm.addEventListener("submit",e=>{e.preventDefault();const id=videoId(urlInput.value.trim());if(!id||!/^[\w-]{11}$/.test(id)){msg.textContent="Link chưa đúng. Dán link youtube.com/watch?v=… hoặc youtu.be/…";return;}loadVideo(id);});
 function noteFromMidi(m){const names=["Đô","Đô♯","Rê","Rê♯","Mi","Fa","Fa♯","Sol","Sol♯","La","La♯","Si"];return names[((m%12)+12)%12]+(Math.floor(m/12)-1);}
-let tuneNode=null,detectedNote=-1,correctedNote=-1,bassFilter=null,echoDelay=null,echoFeedback=null,echoWet=null,toneActive=false,toneTimer=null,toneCounts=Array(12).fill(0),toneStarted=0,lastToneNote=-1;
+let tuneNode=null,detectedNote=-1,correctedNote=-1,bassFilter=null,echoDelay=null,echoFeedback=null,echoWet=null;
 function sendTuneSettings(){
  if(!tuneNode)return;
  const root=Math.max(0,Math.min(11,$("keySelect").selectedIndex));
@@ -36,7 +36,7 @@ async function startMic(){
  analyser.fftSize=2048;monitorGain.gain.value=0;gain.gain.value=Number($("gainSlider").value)/100;
  await ctx.audioWorklet.addModule("/worklet.js");
  tuneNode=new AudioWorkletNode(ctx,"karaoke-tune-processor",{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[1]});
- tuneNode.port.onmessage=e=>{detectedNote=e.data.detectedNote;correctedNote=e.data.correctedNote;const m=detectedNote;if(toneActive&&m>=0&&m!==lastToneNote){toneCounts[((m%12)+12)%12]++;lastToneNote=m;updateToneEstimate();}if(m>=0){$("noteName").textContent=noteFromMidi(m);$("frequency").textContent=(440*Math.pow(2,(m-69)/12)).toFixed(1)+" Hz";$("noteDescription").textContent=correctedNote>=0?"Auto-Tune mục tiêu: "+noteFromMidi(correctedNote):"Đang dò cao độ";$("tunerNeedle").style.left="50%";}else{$("noteName").textContent="—";$("frequency").textContent="— Hz";$("noteDescription").textContent="Hát một nốt rõ để dò";$("tunerNeedle").style.left="50%";}};
+ tuneNode.port.onmessage=e=>{detectedNote=e.data.detectedNote;correctedNote=e.data.correctedNote;const m=detectedNote;if(m>=0){$("noteName").textContent=noteFromMidi(m);$("frequency").textContent=(440*Math.pow(2,(m-69)/12)).toFixed(1)+" Hz";$("noteDescription").textContent=correctedNote>=0?"Auto-Tune mục tiêu: "+noteFromMidi(correctedNote):"Đang dò cao độ";$("tunerNeedle").style.left="50%";}else{$("noteName").textContent="—";$("frequency").textContent="— Hz";$("noteDescription").textContent="Hát một nốt rõ để dò";$("tunerNeedle").style.left="50%";}};
  source.connect(gain);gain.connect(tuneNode);tuneNode.connect(analyser);
  bassFilter=ctx.createBiquadFilter();bassFilter.type="lowshelf";bassFilter.frequency.value=180;bassFilter.gain.value=0;
  echoDelay=ctx.createDelay(1.2);echoDelay.delayTime.value=0.24;echoFeedback=ctx.createGain();echoWet=ctx.createGain();echoFeedback.gain.value=0.18;echoWet.gain.value=0;
@@ -51,7 +51,7 @@ function tick(){}
 function stopMic(){
  if(stream)stream.getTracks().forEach(t=>t.stop());
  if(ctx&&ctx.state!=="closed")ctx.close().catch(()=>{});
- if(toneTimer)clearTimeout(toneTimer);toneTimer=null;toneActive=false;stream=ctx=source=gain=analyser=monitorGain=tuneNode=bassFilter=echoDelay=echoFeedback=echoWet=null;detectedNote=correctedNote=-1;
+ stream=ctx=source=gain=analyser=monitorGain=tuneNode=bassFilter=echoDelay=echoFeedback=echoWet=null;detectedNote=correctedNote=-1;
  $("monitorToggle").checked=false;$("micStatus").textContent="CHƯA KẾT NỐI";$("micStatus").classList.remove("active");$("micButton").classList.remove("enabled");$("micButton").textContent="🎤 Bật micro";
  $("noteName").textContent="—";$("frequency").textContent="— Hz";$("noteDescription").textContent="Bật micro để dò nốt";$("tunerNeedle").style.left="50%";
  $("micHelp").textContent="Auto-Tune cần HTTPS hoặc localhost và quyền micro. Đeo tai nghe khi bật nghe giọng.";
@@ -66,34 +66,21 @@ $("keySelect").addEventListener("change",sendTuneSettings);
 if($("scaleSelect"))$("scaleSelect").addEventListener("change",sendTuneSettings);
 
 const NOTE_NAMES=["Đô","Đô♯","Rê","Rê♯","Mi","Fa","Fa♯","Sol","Sol♯","La","La♯","Si"];
+const NOTE_LATIN=["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"];
 const MAJOR=[6.35,2.23,3.48,2.33,4.38,4.09,2.52,5.19,2.39,3.66,2.29,2.88];
 const MINOR=[6.33,2.68,3.52,5.38,2.6,3.53,2.54,4.75,3.98,2.69,3.34,3.17];
-function updateToneEstimate(){
- const total=toneCounts.reduce((a,b)=>a+b,0);
- if(total<5){$("toneStatus").textContent="ĐANG NGHE";$("detectedKey").textContent="…";$("detectedScale").textContent="Cần thêm nốt rõ";return;}
- let best={score:-Infinity,root:0,scale:"Trưởng"};
- for(let root=0;root<12;root++)for(const [scale,profile] of [["Trưởng",MAJOR],["Thứ",MINOR]]){
-  let score=0;for(let n=0;n<12;n++)score+=toneCounts[(n+root)%12]*profile[n];
-  if(score>best.score)best={score,root,scale};
- }
- $("toneStatus").textContent="CÓ ƯỚC LƯỢNG";
- $("detectedKey").textContent=NOTE_NAMES[best.root]+" ("+["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"][best.root]+")";
- $("detectedScale").textContent=best.scale+" · "+total+" mẫu nốt";
- $("useDetectedKey").disabled=false;$("useDetectedKey").dataset.root=String(best.root);$("useDetectedKey").dataset.scale=best.scale==="Thứ"?"2":"1";
+let selectedAudioFile=null,analysisAudioContext=null;
+$("songAudioFile").addEventListener("change",()=>{selectedAudioFile=$("songAudioFile").files[0]||null;$("audioFileName").textContent=selectedAudioFile?selectedAudioFile.name:"Chưa chọn file";$("toneStatus").textContent=selectedAudioFile?"SẴN SÀNG":"CHỜ FILE NHẠC";$("detectedKey").textContent="—";$("detectedScale").textContent="Chưa phân tích";$("useDetectedKey").disabled=true;});
+function powerAt(data,start,size,sr,hz){const w=2*Math.PI*hz/sr,c=2*Math.cos(w);let a=0,b=0,d=0;for(let i=0;i<size;i++){const x=data[start+i]*(.5-.5*Math.cos(2*Math.PI*i/(size-1)))+c*b-d;d=b;b=x;a=x;}return Math.max(0,b*b+d*d-c*b*d);}
+function analyzeSongBuffer(buf){
+ const data=buf.getChannelData(0),sr=buf.sampleRate,size=4096,step=Math.max(size,Math.floor((data.length-size)/80)),chroma=Array(12).fill(0);let frames=0;
+ for(let start=0;start+size<data.length&&frames<80;start+=step){let energy=0;for(let i=0;i<size;i+=8)energy+=data[start+i]*data[start+i];if(energy<.00001)continue;const frame=Array(12).fill(0);for(let midi=36;midi<=84;midi++){const hz=440*Math.pow(2,(midi-69)/12);if(hz<sr/2)frame[midi%12]+=powerAt(data,start,size,sr,hz);}const sum=frame.reduce((x,y)=>x+y,0)||1;for(let n=0;n<12;n++)chroma[n]+=frame[n]/sum;frames++;}
+ if(frames<3)throw Error("Không đủ âm thanh rõ để phân tích.");let best={score:-Infinity,root:0,scale:"Trưởng"},runner=-Infinity;
+ for(let root=0;root<12;root++)for(const [scale,profile] of [["Trưởng",MAJOR],["Thứ",MINOR]]){let score=0;for(let n=0;n<12;n++)score+=chroma[(n+root)%12]*profile[n];if(score>best.score){runner=best.score;best={score,root,scale};}else if(score>runner)runner=score;}
+ return {...best,frames,confidence:best.score?Math.max(0,(best.score-runner)/best.score):0};
 }
-$("analyzeTone").addEventListener("click",()=>{
- if(!stream){$("toneStatus").textContent="BẬT MICRO TRƯỚC";$("toneStatus").style.color="var(--pink)";return;}
- toneCounts=Array(12).fill(0);lastToneNote=-1;toneActive=true;toneStarted=Date.now();
- $("toneStatus").textContent="ĐANG NGHE 12 GIÂY";$("detectedKey").textContent="…";$("detectedScale").textContent="Hát/ngân theo nhạc";
- $("useDetectedKey").disabled=true;$("analyzeTone").disabled=true;
- toneTimer=setTimeout(()=>{toneActive=false;$("toneStatus").textContent="ĐÃ HOÀN TẤT";$("analyzeTone").disabled=false;updateToneEstimate();},12000);
-});
-$("useDetectedKey").addEventListener("click",()=>{
- if($("useDetectedKey").disabled)return;
- $("keySelect").selectedIndex=Number($("useDetectedKey").dataset.root||0);
- if($("scaleSelect"))$("scaleSelect").value=$("useDetectedKey").dataset.scale||"1";
- sendTuneSettings();$("autotuneStatus").textContent="Đã chọn tông gợi ý từ giọng mày hát. Nếu nhạc nền khác tông, hãy đổi lại thủ công.";
-});
+$("analyzeTone").addEventListener("click",async()=>{if(!selectedAudioFile){$("toneStatus").textContent="CHỌN FILE TRƯỚC";$("toneHelp").textContent="Chọn file nhạc phía trên rồi bấm phân tích.";return;}const btn=$("analyzeTone");btn.disabled=true;$("useDetectedKey").disabled=true;$("toneStatus").textContent="ĐANG PHÂN TÍCH";$("detectedKey").textContent="…";try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)throw Error("Trình duyệt không hỗ trợ Web Audio.");if(!analysisAudioContext||analysisAudioContext.state==="closed")analysisAudioContext=new AC();const buf=await analysisAudioContext.decodeAudioData(await selectedAudioFile.arrayBuffer());const r=analyzeSongBuffer(buf);$("detectedKey").textContent=NOTE_NAMES[r.root]+" ("+NOTE_LATIN[r.root]+")";$("detectedScale").textContent=r.scale+" · "+Math.round(r.confidence*100)+"% phân biệt tương đối";$("toneStatus").textContent="ĐÃ PHÂN TÍCH";$("toneHelp").textContent="Ước lượng từ "+r.frames+" đoạn âm thanh; kết quả không phải bảo đảm chính xác tuyệt đối.";const use=$("useDetectedKey");use.dataset.root=String(r.root);use.dataset.scale=r.scale==="Thứ"?"2":"1";use.disabled=false;}catch(e){$("toneStatus").textContent="LỖI PHÂN TÍCH";$("detectedScale").textContent=e.message||"Thử file MP3, WAV hoặc M4A";}finally{btn.disabled=false;}});
+$("useDetectedKey").addEventListener("click",()=>{if($("useDetectedKey").disabled)return;$("keySelect").selectedIndex=Number($("useDetectedKey").dataset.root||0);$("scaleSelect").value=$("useDetectedKey").dataset.scale||"1";sendTuneSettings();$("autotuneStatus").textContent="Đã áp dụng tông ước lượng từ file nhạc cho Auto-Tune của micro. Nếu nghe lệch, chỉnh tông thủ công.";});
 function updateEffects(){
  const echo=Number($("echoSlider").value)/100,bass=Number($("bassSlider").value),delayMs=Number($("delaySlider").value);
  $("echoValue").textContent=$("echoSlider").value+"%";$("bassValue").textContent=$("bassSlider").value+"%";$("delayValue").textContent=delayMs+" ms";
