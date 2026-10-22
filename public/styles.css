@@ -264,3 +264,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
  .music-source-panel .music-search-side{grid-row:2}
  .music-source-panel .music-search-side .search-results{max-height:360px}
 }
+
+
+/* Auto-Tune automatic mode: remove the unnecessary song-key finder UI */
+.grid:not(.lower)>section.panel:nth-child(2)>.tone-detector{display:none!important}
+.grid:not(.lower)>section.panel:nth-child(2)>.autotune .keyrow{display:none!important}
+.grid:not(.lower)>section.panel:nth-child(2)>.autotune .autotunehead small{font-size:0}
+.grid:not(.lower)>section.panel:nth-child(2)>.autotune .autotunehead small:after{content:"03 / AUTO-TUNE · AUTO MODE";font-size:11px}
+.grid:not(.lower)>section.panel:nth-child(2)>.autotune #autotuneStatus{font-size:12px}
