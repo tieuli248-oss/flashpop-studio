@@ -54,8 +54,7 @@ async function detectFace(source){
   const sw=source.videoWidth||source.naturalWidth||source.width,sh=source.videoHeight||source.naturalHeight||source.height;
   if(sw&&sh&&Math.max(sw,sh)>1280){const scale=1280/Math.max(sw,sh);bitmap=document.createElement('canvas');bitmap.width=Math.round(sw*scale);bitmap.height=Math.round(sh*scale);bitmap.getContext('2d',{willReadFrequently:true}).drawImage(source,0,0,bitmap.width,bitmap.height);target=bitmap}
   const result=task.detect(target);faceLandmarks=result.faceLandmarks?.[0]||null;
-  // Landmarks must map back to the original canvas dimensions.
-  if(faceLandmarks&&bitmap){faceLandmarks=faceLandmarks.map(p=>({...p,x:p.x*bitmap.width/(source.naturalWidth||source.width),y:p.y*bitmap.height/(source.naturalHeight||source.height)}))}
+  // Landmark coordinates are normalized (0–1), so they remain valid after resizing.
   const s=$('faceStatus');if(faceLandmarks){s.dataset.state='ready';s.textContent='Đã nhận diện khuôn mặt · makeup bám theo khuôn mặt.'}else{s.dataset.state='error';s.textContent='Chưa thấy khuôn mặt rõ. Thử ảnh đủ sáng, nhìn gần camera hoặc bấm thử lại AI.'}
  }catch(e){}if(image)draw()
 }
