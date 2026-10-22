@@ -19,7 +19,7 @@ function normalizeSearchItem(v){
  return {id,title:v.title||"Video YouTube",author:v.channel||v.author||v.authorName||v.uploaderName||"Kênh YouTube",thumb,duration:v.lengthSeconds||v.duration||v.length_seconds||""};
 }
 function renderResults(items){
- const normalized=items.map(normalizeSearchItem).filter(v=>/^[\\w-]{11}$/.test(v.id));
+ const normalized=items.map(normalizeSearchItem).filter(v=>/^[A-Za-z0-9_-]{11}$/.test(v.id));
  if(!normalized.length){resultsBox.innerHTML='<p class="search-empty">Chưa tìm thấy video phù hợp. Thử tên bài hát kèm tên ca sĩ hoặc viết ngắn gọn hơn.</p>';return;}
  resultsBox.innerHTML=normalized.slice(0,12).map(v=>'<button type="button" class="result" data-video="'+escapeHTML(v.id)+'" aria-label="Phát '+escapeHTML(v.title)+'"><img loading="lazy" src="'+escapeHTML(v.thumb)+'" alt=""><span class="result-copy"><b>'+escapeHTML(v.title)+'</b><small>'+escapeHTML(v.author)+'</small></span><span class="result-duration">'+escapeHTML(duration(v.duration))+'</span><span class="result-play">▶</span></button>').join("");
 }
@@ -50,7 +50,7 @@ async function searchSongs(query){
 }
 searchForm.addEventListener("submit",e=>{e.preventDefault();const q=queryInput.value.trim();if(q.length<2){msg.textContent="Nhập ít nhất 2 ký tự để tìm bài.";return;}searchSongs(q);});
 queryInput.addEventListener("input",()=>{if(searchTimer)clearTimeout(searchTimer);const q=queryInput.value.trim();if(q.length<2){if(searchController)searchController.abort();resultsBox.innerHTML="";return;}searchTimer=setTimeout(()=>searchSongs(q),650);});
-resultsBox.addEventListener("click",e=>{const b=e.target.closest("[data-video]");if(!b)return;const id=b.dataset.video;if(!/^[\\w-]{11}$/.test(id)){msg.textContent="Kết quả không có mã video hợp lệ.";return;}loadVideo(id);});
+resultsBox.addEventListener("click",e=>{const b=e.target.closest("[data-video]");if(!b)return;const id=b.dataset.video;if(!/^[A-Za-z0-9_-]{11}$/.test(id)){msg.textContent="Kết quả không có mã video hợp lệ.";return;}loadVideo(id);});
 function noteFromMidi(m){const names=["Đô","Đô♯","Rê","Rê♯","Mi","Fa","Fa♯","Sol","Sol♯","La","La♯","Si"];return names[((m%12)+12)%12]+(Math.floor(m/12)-1);}
 let tuneNode=null,detectedNote=-1,correctedNote=-1,bassFilter=null,echoDelay=null,echoFeedback=null,echoWet=null,feedbackAnalyser=null,feedbackNotches=[],feedbackTimer=null,feedbackCandidates={},feedbackLastUpdate=0;
 function sendTuneSettings(){
