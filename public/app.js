@@ -1,5 +1,14 @@
 (()=>{const $=id=>document.getElementById(id);let image=null,angle=0,flip=false,filter='none',original=null,videoUrl=null,cropRatio='free',sticker='none',makeupColor='#ff719d',history=[],historyIndex=-1,historyTimer=null,faceLandmarks=null,faceTask=null,faceTaskPromise=null,cameraStream=null,cameraFacing='user';const canvas=$('canvas'),ctx=canvas.getContext('2d');
-const ranges=['brightness','contrast','saturation','warmth','vignette','blur'];function values(){return Object.fromEntries(ranges.map(k=>[k,+$(k).value]))}
+const ranges=['brightness','contrast','saturation','warmth','vignette','blur'];
+// Advanced beauty controls: face landmarks + contour/nose/brow makeup.
+let showFacePoints=true;
+(function addAdvancedBeautyControls(){
+ const grid=document.querySelector('.makeup-grid');if(!grid)return;
+ const defs=[['makeupContour','Gọn mặt · tạo khối',0,60,'Giả lập tạo khối bằng vùng sáng/tối'],['makeupNose','Sống mũi',0,60,'Highlight sống mũi và đầu mũi'],['makeupBrow','Chân mày',0,60,'Tạo bóng chân mày nhẹ']];
+ defs.forEach(([id,label,min,max,help])=>{const wrap=document.createElement('label');wrap.className='makeup-option';wrap.innerHTML='<span>'+label+'</span><input id="'+id+'" type="range" min="'+min+'" max="'+max+'" value="0"><output id="'+id+'Val">0%</output><small>'+help+'</small>';grid.appendChild(wrap)});
+ const row=document.createElement('div');row.className='makeup-palette';row.innerHTML='<span>Định vị AI</span><button type="button" id="toggleFacePoints" class="tiny" aria-pressed="true">Ẩn điểm mắt · mũi · miệng</button>';grid.insertAdjacentElement('afterend',row);
+ row.querySelector('#toggleFacePoints').onclick=()=>{showFacePoints=!showFacePoints;const b=row.querySelector('button');b.textContent=showFacePoints?'Ẩn điểm mắt · mũi · miệng':'Hiện điểm mắt · mũi · miệng';b.setAttribute('aria-pressed',String(showFacePoints));draw()};
+})();function values(){return Object.fromEntries(ranges.map(k=>[k,+$(k).value]))}
 function draw(){if(!image)return;const v=values(),swap=angle%180!==0;const sourceW=original?original.sw:image.naturalWidth,sourceH=original?original.sh:image.naturalHeight;canvas.width=swap?sourceH:sourceW;canvas.height=swap?sourceW:sourceH;ctx.save();ctx.translate(canvas.width/2,canvas.height/2);ctx.rotate(angle*Math.PI/180);ctx.scale(flip?-1:1,1);const w=swap?image.naturalHeight:image.naturalWidth,h=swap?image.naturalWidth:image.naturalHeight;ctx.filter='brightness('+v.brightness+'%) contrast('+v.contrast+'%) saturate('+v.saturation+'%) blur('+v.blur+'px)';if(original){ctx.drawImage(image,original.sx,original.sy,original.sw,original.sh,-original.sw/2,-original.sh/2,original.sw,original.sh)}else{ctx.drawImage(image,-image.naturalWidth/2,-image.naturalHeight/2)}ctx.restore();ctx.filter='none';if(filter==='pink'||filter==='lavender'||filter==='glow'){ctx.globalCompositeOperation='soft-light';ctx.fillStyle=filter==='pink'?'#ff8acb':filter==='lavender'?'#b9a0ff':'#fff0cf';ctx.globalAlpha=filter==='glow'?.22:.25;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over'}if(filter==='mono'){const d=ctx.getImageData(0,0,canvas.width,canvas.height),p=d.data;for(let i=0;i<p.length;i+=4){const g=.299*p[i]+.587*p[i+1]+.114*p[i+2];p[i]=p[i+1]=p[i+2]=g}ctx.putImageData(d,0,0)}if(filter==='film'){ctx.fillStyle='#ffb76a';ctx.globalAlpha=.1;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.globalAlpha=1}if(v.warmth){ctx.globalCompositeOperation='soft-light';ctx.fillStyle=v.warmth>0?'#ff9d56':'#73baff';ctx.globalAlpha=Math.abs(v.warmth)/120;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over'}
 if(v.vignette>0){const radius=Math.max(canvas.width,canvas.height)*.72;const g=ctx.createRadialGradient(canvas.width/2,canvas.height/2,Math.min(canvas.width,canvas.height)*.18,canvas.width/2,canvas.height/2,radius);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,'+(v.vignette/100)+')');ctx.fillStyle=g;ctx.fillRect(0,0,canvas.width,canvas.height)}
 
@@ -12,6 +21,17 @@ const cw=canvas.width,ch=canvas.height;
 if(faceLandmarks&&angle===0&&!original){
  const cheekL=facePoint(205),cheekR=facePoint(425),eyeL=facePoint(159),eyeR=facePoint(386),lipL=facePoint(61),lipR=facePoint(291),lipTop=facePoint(13),lipBottom=facePoint(14),forehead=facePoint(10),nose=facePoint(1);
  const eyeWidthL=faceDistance(facePoint(33),facePoint(133)),eyeWidthR=faceDistance(facePoint(362),facePoint(263));
+ const contour=+$('makeupContour').value/100, noseMakeup=+$('makeupNose').value/100, browMakeup=+$('makeupBrow').value/100;
+ // Soft sculpting uses detected cheek/jaw/temple locations; no face pixels are uploaded.
+ if(cheekL&&cheekR&&contour>0){
+   const jawL=facePoint(234)||cheekL,jawR=facePoint(454)||cheekR;
+   softSpot(jawL.x,jawL.y,cw*.035,ch*.075,'#6b3157',contour*.75,Math.min(cw,ch)*.045);
+   softSpot(jawR.x,jawR.y,cw*.035,ch*.075,'#6b3157',contour*.75,Math.min(cw,ch)*.045);
+   softSpot(cheekL.x,cheekL.y,cw*.026,ch*.018,'#fff0dc',contour*.32,Math.min(cw,ch)*.03);
+   softSpot(cheekR.x,cheekR.y,cw*.026,ch*.018,'#fff0dc',contour*.32,Math.min(cw,ch)*.03);
+ }
+ if(nose&&noseMakeup>0){const bridge=facePoint(6)||nose,tip=facePoint(4)||nose;softSpot(bridge.x,bridge.y,cw*.009,ch*.045,'#fff4dc',noseMakeup*.75,Math.min(cw,ch)*.012);softSpot(tip.x,tip.y,cw*.014,ch*.012,'#fff4dc',noseMakeup*.45,Math.min(cw,ch)*.01)}
+ if(browMakeup>0){[facePoint(70),facePoint(300)].forEach(p=>{if(p)softSpot(p.x,p.y,cw*.035,ch*.012,'#684052',browMakeup*.65,Math.min(cw,ch)*.01)})}
  if(cheekL)softSpot(cheekL.x,cheekL.y,cw*.04,ch*.025,makeupColor,mb,Math.min(cw,ch)*.035);
  if(cheekR)softSpot(cheekR.x,cheekR.y,cw*.04,ch*.025,makeupColor,mb,Math.min(cw,ch)*.035);
  if(eyeL)softSpot(eyeL.x,eyeL.y,Math.max(eyeWidthL*.48,2),Math.max(ch*.012,2),makeupColor,me,Math.min(cw,ch)*.018);
@@ -20,6 +40,10 @@ if(faceLandmarks&&angle===0&&!original){
  if(lipL&&lipR&&lipTop)softSpot((lipL.x+lipR.x)/2,(lipTop.y+(lipBottom?.y||lipTop.y))/2,lipW*.53,Math.max(lipH*1.8,ch*.004),'#e45b82',ml,Math.min(cw,ch)*.012);
  if(forehead)softSpot(forehead.x,forehead.y,cw*.055,ch*.018,'#fff4dc',mg,Math.min(cw,ch)*.035);
  if(nose)softSpot(nose.x,nose.y,cw*.014,ch*.022,'#fff4dc',mg,Math.min(cw,ch)*.018);
+ if(showFacePoints){
+  const groups=[{ids:[33,133,362,263,159,145,386,374],color:'#70f6ff'},{ids:[1,4,6,168,197],color:'#ffe66d'},{ids:[61,291,13,14,78,308],color:'#ff72b6'}];
+  groups.forEach(g=>g.ids.forEach(i=>{const p=facePoint(i);if(!p)return;ctx.save();ctx.beginPath();ctx.arc(p.x,p.y,Math.max(2,Math.min(cw,ch)*.004),0,Math.PI*2);ctx.fillStyle=g.color;ctx.fill();ctx.strokeStyle='#24152a';ctx.lineWidth=Math.max(1,Math.min(cw,ch)*.0015);ctx.stroke();ctx.restore()}));
+ }
 }else{
  softSpot(cw*.34,ch*.53,cw*.075,ch*.045,makeupColor,mb,Math.min(cw,ch)*.04);softSpot(cw*.66,ch*.53,cw*.075,ch*.045,makeupColor,mb,Math.min(cw,ch)*.04);
  softSpot(cw*.43,ch*.43,cw*.07,ch*.025,makeupColor,me,Math.min(cw,ch)*.025);softSpot(cw*.57,ch*.43,cw*.07,ch*.025,makeupColor,me,Math.min(cw,ch)*.025);
@@ -92,7 +116,7 @@ $('retryFaceAI').addEventListener('click',async()=>{if(faceTask){try{faceTask.cl
 $('openCamera').addEventListener('click',openCamera);$('closeCamera').addEventListener('click',()=>{stopCamera();$('cameraDialog').hidden=true});
 $('cameraDialog').addEventListener('click',e=>{if(e.target===$('cameraDialog'))$('closeCamera').click()});
 $('switchCamera').addEventListener('click',async()=>{cameraFacing=cameraFacing==='user'?'environment':'user';await openCamera()});
-$('takePhoto').addEventListener('click',()=>{const v=$('cameraVideo');if(!cameraStream||!v.videoWidth){$('cameraStatus').textContent='Camera chưa sẵn sàng.';return}const snap=document.createElement('canvas');snap.width=v.videoWidth;snap.height=v.videoHeight;const sc=snap.getContext('2d');sc.translate(snap.width,0);sc.scale(-1,1);sc.drawImage(v,0,0,snap.width,snap.height);const next=new Image();next.onload=()=>{image=next;angle=0;flip=false;filter='none';original=null;cropRatio='free';sticker='none';['makeupBlush','makeupLip','makeupEye','makeupGlow'].forEach(id=>{$(id).value=0;$(id+'Val').textContent='0%'});history=[];historyIndex=-1;draw();snapshot();$('downloadPhoto').disabled=false;$('compare').disabled=false;$('saveLibrary').disabled=false;$('photoInput').value='';detectFace(image)};next.src=snap.toDataURL('image/jpeg',.94);stopCamera();$('cameraDialog').hidden=true});
+$('takePhoto').addEventListener('click',()=>{const v=$('cameraVideo');if(!cameraStream||!v.videoWidth){$('cameraStatus').textContent='Camera chưa sẵn sàng.';return}const snap=document.createElement('canvas');snap.width=v.videoWidth;snap.height=v.videoHeight;const sc=snap.getContext('2d');sc.translate(snap.width,0);sc.scale(-1,1);sc.drawImage(v,0,0,snap.width,snap.height);const next=new Image();next.onload=()=>{image=next;angle=0;flip=false;filter='none';original=null;cropRatio='free';sticker='none';['makeupBlush','makeupLip','makeupEye','makeupGlow','makeupContour','makeupNose','makeupBrow'].forEach(id=>{if($(id)){$(id).value=0;$(id+'Val').textContent='0%'}});history=[];historyIndex=-1;draw();snapshot();$('downloadPhoto').disabled=false;$('compare').disabled=false;$('saveLibrary').disabled=false;$('photoInput').value='';detectFace(image)};next.src=snap.toDataURL('image/jpeg',.94);stopCamera();$('cameraDialog').hidden=true});
 function setPreset(name){
  const presets={
   clean:{brightness:106,contrast:98,saturation:92,warmth:5,vignette:5,blur:0,filter:'glow',makeupBlush:12,makeupLip:12,makeupEye:4,makeupGlow:10,color:'#e9a47d'},
@@ -111,7 +135,7 @@ function setPreset(name){
   makeupColor=p.color;filter=p.filter;
  }
  ranges.forEach(k=>{$(k+'Val').textContent=k==='warmth'?$(k).value:k==='blur'?$(k).value+'px':$(k).value+'%'});
- ['makeupBlush','makeupLip','makeupEye','makeupGlow'].forEach(k=>$(k+'Val').textContent=$(k).value+'%');
+ ['makeupBlush','makeupLip','makeupEye','makeupGlow','makeupContour','makeupNose','makeupBrow'].forEach(k=>{if($(k))$(k+'Val').textContent=$(k).value+'%'});
  document.querySelectorAll('.filter[data-filter]').forEach(b=>b.classList.toggle('selected',b.dataset.filter===filter));
  document.querySelectorAll('[data-makeup-color]').forEach(b=>b.classList.toggle('selected',b.dataset.makeupColor===makeupColor));
  document.querySelectorAll('[data-preset]').forEach(b=>b.classList.toggle('selected',b.dataset.preset===name));
@@ -130,9 +154,9 @@ function updateHistory(){$('undoEdit').disabled=historyIndex<=0;$('redoEdit').di
 function queueSnapshot(){clearTimeout(historyTimer);historyTimer=setTimeout(snapshot,450)}
 function applyState(s){if(!s)return;ranges.forEach(k=>{if(s.ranges[k]!==undefined)$(k).value=s.ranges[k];$(k+'Val').textContent=k==='blur'?$(k).value+'px':k==='warmth'?$(k).value:$(k).value+'%'});filter=s.filter;angle=s.angle;flip=s.flip;$('overlayText').value=s.caption;$('textPosition').value=s.pos;$('textColor').value=s.color;$('textSize').value=s.size;$('exportFormat').value=s.format;cropRatio=s.cropRatio;sticker=s.sticker;makeupColor=s.makeupColor||'#ff719d';['Blush','Lip','Eye','Glow'].forEach(k=>{const key='makeup'+k;if(s[key]!==undefined)$(key).value=s[key];$(key+'Val').textContent=$(key).value+'%'});document.querySelectorAll('[data-makeup-color]').forEach(b=>b.classList.toggle('selected',b.dataset.makeupColor===makeupColor));original=null;if(image&&cropRatio!=='free'){const [rw,rh]=cropRatio.split('/').map(Number),ratio=rw/rh,iw=image.naturalWidth,ih=image.naturalHeight;if(iw/ih>ratio){const nw=ih*ratio;original={sx:(iw-nw)/2,sy:0,sw:nw,sh:ih}}else{const nh=iw/ratio;original={sx:0,sy:(ih-nh)/2,sw:iw,sh:nh}}}document.querySelectorAll('.filter[data-filter]').forEach(b=>b.classList.toggle('selected',b.dataset.filter===filter));document.querySelectorAll('.filter[data-sticker]').forEach(b=>b.classList.toggle('selected',b.dataset.sticker===sticker));document.querySelectorAll('[data-crop]').forEach(b=>b.classList.toggle('selected',b.dataset.crop===cropRatio));draw();updateHistory()}
 ranges.forEach(k=>$(k).addEventListener('input',()=>{$(k+'Val').textContent=k==='warmth'?$(k).value:k==='blur'?$(k).value+'px':$(k).value+'%';draw();queueSnapshot()}));
-['makeupBlush','makeupLip','makeupEye','makeupGlow'].forEach(id=>$(id).addEventListener('input',()=>{$(id+'Val').textContent=$(id).value+'%';draw();queueSnapshot()}));
+['makeupBlush','makeupLip','makeupEye','makeupGlow','makeupContour','makeupNose','makeupBrow'].forEach(id=>$(id)?.addEventListener('input',()=>{$(id+'Val').textContent=$(id).value+'%';draw();queueSnapshot()}));
 document.querySelectorAll('[data-makeup-color]').forEach(b=>b.onclick=()=>{makeupColor=b.dataset.makeupColor;document.querySelectorAll('[data-makeup-color]').forEach(x=>x.classList.toggle('selected',x===b));draw();snapshot()});
-$('resetMakeup').onclick=()=>{['makeupBlush','makeupLip','makeupEye','makeupGlow'].forEach(id=>{$(id).value=0;$(id+'Val').textContent='0%'});draw();snapshot()};
+$('resetMakeup').onclick=()=>{['makeupBlush','makeupLip','makeupEye','makeupGlow','makeupContour','makeupNose','makeupBrow'].forEach(id=>{if($(id)){$(id).value=0;$(id+'Val').textContent='0%'}});draw();snapshot()};
 ['overlayText','textPosition','textColor','textSize','exportFormat'].forEach(id=>$(id).addEventListener(id==='overlayText'?'input':'change',()=>{draw();queueSnapshot()}));
 document.querySelectorAll('[data-crop]').forEach(b=>b.onclick=()=>{cropRatio=b.dataset.crop;document.querySelectorAll('[data-crop]').forEach(x=>x.classList.toggle('selected',x===b));if(image&&cropRatio!=='free'){const [rw,rh]=cropRatio.split('/').map(Number),ratio=rw/rh,iw=image.naturalWidth,ih=image.naturalHeight;if(iw/ih>ratio){const nw=ih*ratio;original={sx:(iw-nw)/2,sy:0,sw:nw,sh:ih}}else{const nh=iw/ratio;original={sx:0,sy:(ih-nh)/2,sw:iw,sh:nh}}}else original=null;draw();snapshot()});
 document.querySelectorAll('[data-sticker]').forEach(b=>b.onclick=()=>{sticker=b.dataset.sticker;document.querySelectorAll('[data-sticker]').forEach(x=>x.classList.toggle('selected',x===b));draw();snapshot()});
