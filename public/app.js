@@ -33,7 +33,7 @@ async function startMic(){
  const AC=window.AudioContext||window.webkitAudioContext;
  ctx=new AC({latencyHint:"interactive"});
  await ctx.resume();
- const micConstraints={echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1};if(chosenMicDevice)micConstraints.deviceId={exact:chosenMicDevice};stream=await navigator.mediaDevices.getUserMedia({audio:micConstraints});
+ const micConstraints={echoCancellation:isMobileDevice(),noiseSuppression:false,autoGainControl:false,channelCount:1};if(chosenMicDevice)micConstraints.deviceId={exact:chosenMicDevice};stream=await navigator.mediaDevices.getUserMedia({audio:micConstraints});
  source=ctx.createMediaStreamSource(stream);gain=ctx.createGain();analyser=ctx.createAnalyser();monitorGain=ctx.createGain();
  analyser.fftSize=2048;monitorGain.gain.value=0;gain.gain.value=Number($("gainSlider").value)/100;
  await ctx.audioWorklet.addModule("/worklet.js");
