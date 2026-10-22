@@ -3,23 +3,54 @@
 const $ = id => document.getElementById(id);
 let chosenMicDevice="";
 const isMobileDevice=()=>/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||((navigator.maxTouchPoints||0)>1&&/Macintosh/i.test(navigator.userAgent));
-const searchForm=$("searchForm"), queryInput=$("songQuery"), resultsBox=$("searchResults"), urlForm=$("youtubeForm"), urlInput=$("youtubeUrl"), frame=$("videoFrame"), msg=$("playerMessage");
-let player=null,pendingId=null,stream=null,ctx=null,source=null,gain=null,analyser=null,monitorGain=null,raf=null,lastUpdate=0,searchController=null,highPassFilter=null,micCompressor=null;
+const searchForm=$("searchForm"), queryInput=$("songQuery"), resultsBox=$("searchResults"), frame=$("videoFrame"), msg=$("playerMessage");
+let player=null,pendingId=null,stream=null,ctx=null,source=null,gain=null,analyser=null,monitorGain=null,raf=null,lastUpdate=0,searchController=null,searchTimer=null,lastSearchQuery="",highPassFilter=null,micCompressor=null;
 const searchInstances=[
  "https://inv.nadeko.net/api/v1/search",
  "https://invidious.nerdvpn.de/api/v1/search",
- "https://invidious.tiekoetter.com/api/v1/search"
+ "https://invidious.tiekoetter.com/api/v1/search",
+ "https://invidious.privacyredirect.com/api/v1/search"
 ];
 function videoId(raw){try{const u=new URL(raw);if(u.hostname==="youtu.be")return u.pathname.split("/").filter(Boolean)[0]||null;if(u.hostname.includes("youtube.com")){if(u.pathname==="/watch")return u.searchParams.get("v");const p=u.pathname.split("/").filter(Boolean);if(["embed","shorts","live"].includes(p[0]))return p[1]||null;}}catch(e){}return null;}
 function loadVideo(id){pendingId=id;if(!window.YT||!window.YT.Player){msg.textContent="Đang tải trình phát YouTube… thử lại sau khi trình phát sẵn sàng.";return;}if(player&&player.destroy){try{player.destroy()}catch(e){}}frame.innerHTML='<div id="youtubePlayer"></div>';player=new YT.Player("youtubePlayer",{videoId:id,width:"100%",height:"100%",playerVars:{playsinline:1,rel:0},events:{onReady:()=>{msg.textContent="Video đã tải. Bấm phát trong trình YouTube để nghe.";frame.scrollIntoView({behavior:"smooth",block:"nearest"});},onError:e=>msg.textContent=({2:"Link hoặc mã video không hợp lệ.",5:"Video không phát được bằng trình phát HTML5.",100:"Không tìm thấy video hoặc video đã bị gỡ.",101:"Chủ video không cho phép nhúng video này.",150:"Chủ video không cho phép nhúng video này."})[e.data]||"YouTube không thể phát video này. Thử bài khác."}});}
 window.onYouTubeIframeAPIReady=()=>{if(pendingId)loadVideo(pendingId)};
 function escapeHTML(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function duration(s){if(!Number.isFinite(Number(s)))return "";let n=Number(s),h=Math.floor(n/3600),m=Math.floor(n%3600/60),sec=Math.floor(n%60);return h?[h,m,sec].map((x,i)=>i?String(x).padStart(2,"0"):x).join(":"):[m,sec].map(x=>String(x).padStart(2,"0")).join(":");}
-function renderResults(items){if(!items.length){resultsBox.innerHTML='<p class="search-empty">Không thấy kết quả. Thử tên bài ngắn hơn hoặc dán link YouTube.</p>';return;}resultsBox.innerHTML=items.slice(0,10).map((v,i)=>{const id=v.videoId||v.video_id||v.id?.videoId||"";const title=v.title||"Video YouTube";const author=v.author||v.authorName||v.uploaderName||"Kênh YouTube";const thumb=(v.videoThumbnails||v.thumbnails||[]).find(t=>t.quality==="medium")?.url||(v.videoThumbnails||v.thumbnails||[])[0]?.url||("https://i.ytimg.com/vi/"+id+"/mqdefault.jpg");return '<button type="button" class="result" data-video="'+escapeHTML(id)+'"><img loading="lazy" src="'+escapeHTML(thumb)+'" alt=""><span class="result-copy"><b>'+escapeHTML(title)+'</b><small>'+escapeHTML(author)+'</small></span><span class="result-duration">'+escapeHTML(duration(v.lengthSeconds||v.duration))+'</span><span class="result-play">▶</span></button>';}).join("");}
-async function searchSongs(query){if(searchController)searchController.abort();searchController=new AbortController();const signal=searchController.signal;resultsBox.innerHTML='<p class="search-empty"><span class="spinner"></span> Đang tìm bài hát…</p>';msg.textContent="Đang thử các nguồn tìm kiếm công khai miễn phí.";let lastError=null;for(const endpoint of searchInstances){try{const url=endpoint+"?q="+encodeURIComponent(query)+"&type=video&page=1";const res=await fetch(url,{signal,headers:{Accept:"application/json"}});if(!res.ok)throw Error("HTTP "+res.status);const data=await res.json();if(!Array.isArray(data))throw Error("Phản hồi không đúng định dạng");const items=data.filter(v=>v.videoId||v.video_id||v.id?.videoId);renderResults(items);msg.textContent="Kết quả từ nguồn tìm kiếm công khai. Chọn một bài để phát; nguồn có thể không ổn định.";return;}catch(err){if(err.name==="AbortError")return;lastError=err;}}resultsBox.innerHTML='<p class="search-empty">Các nguồn tìm kiếm miễn phí hiện không phản hồi hoặc bị trình duyệt chặn. Thử lại sau hoặc dùng link YouTube ở mục bên dưới.</p>';msg.textContent="Không kết nối được nguồn tìm kiếm công khai: chưa có kết quả được tải."; }
+function normalizeSearchItem(v){
+ const id=v.videoId||v.video_id||v.id?.videoId||v.id||"";
+ const rawThumb=v.videoThumbnails||v.thumbnails||[];
+ const thumbs=Array.isArray(rawThumb)?rawThumb:(typeof rawThumb==="string"?[{url:rawThumb}]:[]);
+ const thumb=thumbs.find(t=>t?.quality==="medium")?.url||thumbs.find(t=>t?.url)?.url||("https://i.ytimg.com/vi/"+id+"/mqdefault.jpg");
+ return {id,title:v.title||"Video YouTube",author:v.author||v.authorName||v.uploaderName||"Kênh YouTube",thumb,duration:v.lengthSeconds||v.duration||v.length_seconds||""};
+}
+function renderResults(items){
+ const normalized=items.map(normalizeSearchItem).filter(v=>/^[\\w-]{11}$/.test(v.id));
+ if(!normalized.length){resultsBox.innerHTML='<p class="search-empty">Chưa tìm thấy video phù hợp. Thử tên bài hát kèm tên ca sĩ hoặc viết ngắn gọn hơn.</p>';return;}
+ resultsBox.innerHTML=normalized.slice(0,12).map(v=>'<button type="button" class="result" data-video="'+escapeHTML(v.id)+'" aria-label="Phát '+escapeHTML(v.title)+'"><img loading="lazy" src="'+escapeHTML(v.thumb)+'" alt=""><span class="result-copy"><b>'+escapeHTML(v.title)+'</b><small>'+escapeHTML(v.author)+'</small></span><span class="result-duration">'+escapeHTML(duration(v.duration))+'</span><span class="result-play">▶</span></button>').join("");
+}
+async function searchSongs(query){
+ const clean=query.trim();if(clean.length<2)return;
+ if(searchController)searchController.abort();
+ searchController=new AbortController();const signal=searchController.signal;
+ lastSearchQuery=clean.toLocaleLowerCase();
+ resultsBox.innerHTML='<p class="search-empty"><span class="spinner"></span> Đang tìm bài hát trên YouTube…</p>';
+ msg.textContent="Đang tìm video theo tên bài hát hoặc ca sĩ.";
+ for(const endpoint of searchInstances){
+  try{
+   const res=await fetch(endpoint+"?q="+encodeURIComponent(clean)+"&type=video&page=1",{signal,headers:{Accept:"application/json"}});
+   if(!res.ok)throw Error("HTTP "+res.status);
+   const data=await res.json();if(!Array.isArray(data))throw Error("Phản hồi không đúng định dạng");
+   if(signal.aborted)return;
+   renderResults(data);msg.textContent="Tìm thấy kết quả. Bấm vào một bài để phát ngay trong trình phát bên dưới.";return;
+  }catch(err){if(err.name==="AbortError"||signal.aborted)return;}
+ }
+ if(lastSearchQuery!==clean.toLocaleLowerCase())return;
+ resultsBox.innerHTML='<p class="search-empty">Nguồn tìm kiếm miễn phí hiện không phản hồi hoặc bị trình duyệt chặn. Bấm “Tìm bài” để thử lại sau ít phút.</p>';
+ msg.textContent="Chưa kết nối được nguồn tìm kiếm công khai. Mày không cần dán link để dùng tính năng tìm kiếm.";
+}
 searchForm.addEventListener("submit",e=>{e.preventDefault();const q=queryInput.value.trim();if(q.length<2){msg.textContent="Nhập ít nhất 2 ký tự để tìm bài.";return;}searchSongs(q);});
-resultsBox.addEventListener("click",e=>{const b=e.target.closest("[data-video]");if(!b)return;const id=b.dataset.video;if(!/^[\w-]{11}$/.test(id)){msg.textContent="Kết quả không có mã video hợp lệ.";return;}loadVideo(id);});
-urlForm.addEventListener("submit",e=>{e.preventDefault();const id=videoId(urlInput.value.trim());if(!id||!/^[\w-]{11}$/.test(id)){msg.textContent="Link chưa đúng. Dán link youtube.com/watch?v=… hoặc youtu.be/…";return;}loadVideo(id);});
+queryInput.addEventListener("input",()=>{if(searchTimer)clearTimeout(searchTimer);const q=queryInput.value.trim();if(q.length<2){if(searchController)searchController.abort();resultsBox.innerHTML="";return;}searchTimer=setTimeout(()=>searchSongs(q),650);});
+resultsBox.addEventListener("click",e=>{const b=e.target.closest("[data-video]");if(!b)return;const id=b.dataset.video;if(!/^[\\w-]{11}$/.test(id)){msg.textContent="Kết quả không có mã video hợp lệ.";return;}loadVideo(id);});
 function noteFromMidi(m){const names=["Đô","Đô♯","Rê","Rê♯","Mi","Fa","Fa♯","Sol","Sol♯","La","La♯","Si"];return names[((m%12)+12)%12]+(Math.floor(m/12)-1);}
 let tuneNode=null,detectedNote=-1,correctedNote=-1,bassFilter=null,echoDelay=null,echoFeedback=null,echoWet=null,feedbackAnalyser=null,feedbackNotches=[],feedbackTimer=null,feedbackCandidates={},feedbackLastUpdate=0;
 function sendTuneSettings(){
