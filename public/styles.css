@@ -22,3 +22,54 @@
 .device-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin:12px 0}.device-row label{grid-column:1/-1;font-size:.82rem;color:var(--muted,#b8b2ca)}.device-row select{min-width:0;width:100%;padding:10px 12px;border:1px solid #a0dbf244;border-radius:10px;background:#171027;color:inherit}.device-row button{padding:10px 12px;border:1px solid #f2a7ca55;border-radius:10px;background:#f2a7ca12;color:inherit;cursor:pointer}@media(max-width:520px){.device-row{grid-template-columns:1fr}.device-row label{grid-column:auto}}
 
 .device-note{grid-column:1/-1;margin:0;font-size:.76rem;line-height:1.5;color:var(--muted,#b8b2ca)}@media(max-width:700px){.grid{grid-template-columns:minmax(0,1fr)!important}.panel{min-width:0}.device-row select,.device-row button{min-height:44px;font-size:16px}.searchform input,.linkform input,select,input[type=search],input[type=url]{font-size:16px}.video{width:100%;aspect-ratio:16/9}.monitor-row{flex-wrap:wrap}.monitor-row>*{min-width:0;flex:1 1 100%}.control input[type=range]{width:100%}}
+
+
+/* FlashPop Studio — compact neon Y2K polish */
+:root{--bg:#0b0815;--panel:#151020;--line:#ffffff12;--text:#faf7ff;--muted:#aaa0bd;--pink:#ff8acb;--purple:#b9a1ff;--cyan:#91eaff;--green:#a4ffd9}
+body{background:radial-gradient(ellipse at 50% -18%,#39204d 0,transparent 42%),radial-gradient(ellipse at 100% 40%,#21133b 0,transparent 34%),var(--bg)}
+header{height:62px;position:sticky;top:0;z-index:20;padding:0 max(calc((100vw - 1180px)/2),24px);background:#0b0815d9;border-bottom:1px solid #ffffff12;backdrop-filter:blur(20px)}
+.brand{display:flex;align-items:center;gap:8px;letter-spacing:.8px}.brand b{margin:0;box-shadow:0 0 22px #ff8acb24}
+main{max-width:1180px;padding:0 22px}
+.hero{padding:34px 0 25px}.eyebrow{font-size:9px;letter-spacing:2px}h1{font-size:clamp(36px,4.6vw,56px);letter-spacing:-2.5px;margin:10px 0}.hero p{font-size:12px}.tags{margin-top:14px}.tags span{padding:6px 10px;background:#ffffff04}
+.grid{grid-template-columns:minmax(0,1.04fr) minmax(0,.96fr);gap:14px;align-items:start}
+.panel{padding:19px;border-radius:18px;background:linear-gradient(145deg,#1a1428f5,#100c1bf7);border-color:#ffffff13;box-shadow:0 12px 38px #0003}
+.head{margin-bottom:14px}.head h2,h2{font-size:18px}.head small,.tone-title small,.autotunehead small{font-size:8px}
+.searchform{gap:7px}.searchform input{min-height:43px;background:#0d0a16;border-color:#ffffff16}.searchform button{min-height:43px;padding:0 15px;white-space:nowrap;box-shadow:0 4px 18px #ff8acb16}
+.hint{margin:8px 0 10px}.search-results{gap:6px;max-height:260px;margin:8px 0 12px;scrollbar-width:thin;scrollbar-color:#6c577f transparent}
+.result{min-height:62px;padding:7px 9px;border-radius:10px;background:#ffffff04;border-color:#ffffff0d;transition:background .18s,border-color .18s,transform .18s}
+.result:hover{background:#b9a1ff12;border-color:#b9a1ff55;transform:translateY(-1px)}
+.result img{width:84px;height:48px;border-radius:7px}.result-copy b{font-size:10px}.result-copy small{font-size:9px}
+.video{border:1px solid #ffffff14;border-radius:12px;background:radial-gradient(ellipse at 50% 40%,#2b1c40,#0d0915 72%)}
+.foot{font-size:8px;margin-top:10px}
+.pitch{padding:13px;border-radius:13px;margin-bottom:10px;background:linear-gradient(135deg,#211833,#14101f);border-color:#b9a1ff24}
+.note{margin:16px 0}.note>strong{font-size:47px}.meter{height:6px}
+.micbutton{min-height:43px}.micbutton.enabled{color:#10251f}
+.device-row{margin:10px 0;gap:7px}.device-note{font-size:9px;line-height:1.55}
+.monitor-row{margin-top:11px;padding:11px;border-radius:11px;gap:12px}
+.control{margin-top:13px;padding-top:11px}.control b{font-size:10px}
+.autotune,.tone-detector,.effects,.music-controls{margin-top:13px;padding:13px;border-radius:12px}
+.autotune p,.tone-detector p,.effects p{font-size:9px;line-height:1.6;margin:8px 0}
+.autotunehead h3,.tone-title h3{font-size:13px}
+.tone-title>span{font-size:8px;padding:5px}
+.keyrow{margin-top:10px}.keyrow select{min-height:35px}
+.capture-audio-button{min-height:40px}
+.audio-file-label{min-height:38px}
+.tone-actions button{min-height:36px}
+.lower{margin-top:14px}.lower .panel{padding:17px}.lower ol{gap:11px;margin-top:13px}
+footer{padding:20px 2px 25px}
+button,select,input{transition:border-color .18s,filter .18s}
+button:hover{filter:brightness(1.07)}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #b9a1ff;outline-offset:2px}
+@media(min-width:1100px){.grid{gap:16px}.panel{padding:21px}.hero{padding-top:30px}.search-results{max-height:245px}}
+@media(max-width:850px){header{padding:0 18px}.hero{padding:30px 0 22px}.grid{gap:12px}.panel{padding:17px}}
+@media(max-width:520px){
+ header{height:56px;padding:0 13px}.brand{font-size:10px}.brand b{width:28px;height:28px;font-size:17px;border-radius:9px}.topnote{font-size:7px}.spark{font-size:17px}
+ main{padding:0 11px}.hero{padding:27px 0 18px}h1{font-size:39px;letter-spacing:-2px;margin:9px 0}.hero p{font-size:11px;line-height:1.65}.tags{gap:5px;margin-top:12px}.tags span{font-size:7px;padding:6px 7px}
+ .grid{gap:10px}.panel{padding:14px;border-radius:15px}.head{margin-bottom:12px}.head h2,h2{font-size:17px}
+ .searchform{flex-direction:row;gap:6px}.searchform input{padding:10px 11px;min-height:42px}.searchform button{padding:0 11px;min-height:42px;font-size:11px}
+ .search-results{max-height:235px}.result{min-height:58px;padding:6px;gap:7px}.result img{width:70px;height:41px}.result-copy b{font-size:10px;line-height:1.35}.result-play{padding:0 3px}
+ .pitch{padding:12px}.note>strong{font-size:43px;min-width:68px}.note div span{font-size:9px}.device-row select,.device-row button{min-height:41px;font-size:14px}
+ .autotunehead{flex-direction:row;align-items:center}.autotunehead h3,.tone-title h3{font-size:13px}.autotune,.tone-detector,.effects,.music-controls{padding:12px}
+ .tone-actions{display:grid;grid-template-columns:1fr}.tone-actions button{min-height:40px}
+ .lower{margin-top:10px}.lower .panel{padding:14px}.notePanel{gap:12px}.disc{width:46px;height:46px;font-size:23px;border-radius:13px}
+ footer{font-size:8px;padding:18px 0 22px}
+}
