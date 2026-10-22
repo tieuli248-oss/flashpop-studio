@@ -95,15 +95,18 @@ $("useDetectedKey").addEventListener("click",()=>{
  sendTuneSettings();$("autotuneStatus").textContent="Đã chọn tông gợi ý từ giọng mày hát. Nếu nhạc nền khác tông, hãy đổi lại thủ công.";
 });
 function updateEffects(){
+ const echo=Number($("echoSlider").value)/100,bass=Number($("bassSlider").value),delayMs=Number($("delaySlider").value);
+ $("echoValue").textContent=$("echoSlider").value+"%";$("bassValue").textContent=$("bassSlider").value+"%";$("delayValue").textContent=delayMs+" ms";
  if(!ctx)return;
- const echo=Number($("echoSlider").value)/100,bass=Number($("bassSlider").value);
- $("echoValue").textContent=$("echoSlider").value+"%";$("bassValue").textContent=$("bassSlider").value+"%";
  if(echoWet)echoWet.gain.setTargetAtTime(echo,ctx.currentTime,.04);
  if(echoFeedback)echoFeedback.gain.setTargetAtTime(Math.min(.38,echo*.55),ctx.currentTime,.04);
+ if(echoDelay)echoDelay.delayTime.setTargetAtTime(delayMs/1000,ctx.currentTime,.04);
  if(bassFilter)bassFilter.gain.setTargetAtTime(bass*.12,ctx.currentTime,.04);
 }
 $("echoSlider").addEventListener("input",updateEffects);
+$("delaySlider").addEventListener("input",updateEffects);
 $("bassSlider").addEventListener("input",updateEffects);
+updateEffects();
 
 window.addEventListener("beforeunload",stopMic);
 })();
