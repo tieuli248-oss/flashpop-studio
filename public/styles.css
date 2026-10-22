@@ -293,3 +293,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
  overflow-y:auto;
  overscroll-behavior:contain;
 }
+
+
+/* Microphone button sizing */
+.micbutton{
+ width:110px;
+ min-height:41px;
+}
