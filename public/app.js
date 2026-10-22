@@ -52,7 +52,7 @@ async function startMic(){
  sendTuneSettings();
  if($("monitorToggle").checked)monitorGain.gain.setTargetAtTime(Number($("monitorVolume").value)/100,ctx.currentTime,.03);
  $("micStatus").textContent="MIC ĐANG BẬT";$("micStatus").classList.add("active");$("micButton").classList.add("enabled");$("micButton").textContent="⏹ Tắt micro";
- $("micHelp").textContent="Auto-Tune đang xử lý giọng trực tiếp. Đeo tai nghe để tránh hú; loa ngoài có thể gây vọng.";
+ $("micHelp").textContent="Có thể phát giọng ra loa ngoài. Bắt đầu âm lượng loa và nghe micro thấp, để micro phía sau loa và tăng từ từ; phần mềm chỉ giảm nguy cơ hú, không thể triệt hú tuyệt đối.";
 }
 function tick(){}
 function stopMic(){
@@ -148,7 +148,8 @@ function startFeedbackGuard(){
  if(feedbackTimer)clearInterval(feedbackTimer);
  const status=$("feedbackStatus");if(status)status.textContent=$("feedbackToggle").checked?"ĐANG GIÁM SÁT":"ĐÃ TẮT";
  feedbackTimer=setInterval(()=>{
-  if(!ctx||!feedbackAnalyser||!feedbackNotches.length||!$("feedbackToggle").checked){if(status)status.textContent=$("feedbackToggle").checked?"CHỜ MICRO":"ĐÃ TẮT";return;}
+  if(!ctx||!feedbackAnalyser||!feedbackNotches.length){if(status)status.textContent="CHỜ MICRO";return;}
+  if(!$("feedbackToggle").checked){feedbackNotches.forEach(n=>{n.frequency.setTargetAtTime(20000,ctx.currentTime,.04);n.Q.setTargetAtTime(1,ctx.currentTime,.04);});if(status)status.textContent="ĐÃ TẮT";return;}
   const spectrum=new Float32Array(feedbackAnalyser.frequencyBinCount);feedbackAnalyser.getFloatFrequencyData(spectrum);
   const sr=ctx.sampleRate,fft=feedbackAnalyser.fftSize,candidates=[];
   for(let i=Math.ceil(250*fft/sr);i<Math.min(spectrum.length-5,Math.floor(4800*fft/sr));i++){
@@ -182,6 +183,6 @@ $("echoSlider").addEventListener("input",updateEffects);
 $("delaySlider").addEventListener("input",updateEffects);
 $("bassSlider").addEventListener("input",updateEffects);
 updateEffects();
-if($("feedbackToggle"))$("feedbackToggle").addEventListener("change",()=>{if($("feedbackStatus"))$("feedbackStatus").textContent=$("feedbackToggle").checked?"ĐANG GIÁM SÁT":"ĐÃ TẮT";});
+if($("feedbackToggle"))$("feedbackToggle").addEventListener("change",()=>{if($("feedbackStatus"))$("feedbackStatus").textContent=$("feedbackToggle").checked?"ĐANG GIÁM SÁT":"ĐÃ TẮT";if(!$("feedbackToggle").checked&&ctx)feedbackNotches.forEach(n=>{n.frequency.setTargetAtTime(20000,ctx.currentTime,.04);n.Q.setTargetAtTime(1,ctx.currentTime,.04);});});
 window.addEventListener("beforeunload",stopMic);
 })();
