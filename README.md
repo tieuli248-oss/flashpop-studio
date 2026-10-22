@@ -1,26 +1,30 @@
-# FLASHPOP Studio
+# Karaoke Studio
 
-A browser-first photo editor and video preview workspace with a Y2K pastel interface.
+FLASHPOP Studio được chuyển thành dự án Karaoke Studio trong repository hiện tại.
 
-## Features
-- Photo upload and camera capture (front/rear camera switch), brightness, contrast, saturation, warmth, vignette and softening controls, preset looks, rotate/flip, crop presets, sticker overlays, text captions, PNG/JPG export, press-to-compare preview, and undo/redo edit history.
-- On-device face landmarks with MediaPipe Face Landmarker to position blush, eye shadow, lipstick and highlights on detected facial points, with a relative-position fallback if the model cannot load.
-- Video preview, playback speed, aspect-ratio presets and previewing a selected time range.
-- Responsive desktop and mobile layouts.
-- Photo edits and face landmark inference run locally in the browser; MediaPipe code/model are fetched from public CDNs on first use.
-- Cloud AI is not connected yet: no cloud endpoint or API credentials exist in this repo. The current build does not upload photos to an AI service.
+## Chạy thử
+- Mở thư mục `public` bằng VS Code và dùng Live Server, hoặc triển khai site tĩnh bằng HTTPS.
+- Dán link YouTube công khai có cho phép nhúng.
+- Nhấn **Bật micro** và cấp quyền trình duyệt để thử dò cao độ.
+- Micro cần HTTPS hoặc localhost.
 
-## Deploy to Cloudflare Workers
-This repository uses Workers Static Assets.
+## Đã có trong MVP
+- Giao diện responsive phong cách Y2K neon tím hồng.
+- Nhúng video YouTube từ link watch, youtu.be, shorts và live.
+- Dò nốt/cao độ micro bằng Web Audio API và hiển thị tần số/độ lệch cent.
+- Micro không tự phát ra loa, giảm nguy cơ hú.
 
-- Build command: leave blank.
-- Deploy command: `npx wrangler deploy`
-- Preview command: `npx wrangler dev` (optional).
+## Chưa có
+- Auto-Tune / pitch correction thật theo thời gian thực.
+- Nghe monitor micro qua tai nghe, reverb.
+- Tìm kiếm YouTube bằng API, tài khoản, lưu bài yêu thích.
+- Dò quãng giọng tự động.
 
-The `wrangler.jsonc` points to the `public/` directory.
+## Lộ trình
+1. Kiểm thử YouTube player và tuner trên trình duyệt thật.
+2. Tích hợp pitch-shifting thời gian thực (AudioWorklet/DSP) cùng lựa chọn key/scale.
+3. Thêm monitor tai nghe và hiệu ứng vang có kiểm soát.
+4. Cân nhắc YouTube Data API với API key, quota và tuân thủ điều khoản.
+5. Thêm tài khoản sau khi trải nghiệm hát ổn định.
 
-## Limitations
-This is an early MVP, not a full Hypic/CapCut replacement. Video trimming is preview-only; it does not render a trimmed file or export MP4. User accounts, persistent cloud libraries, audio tracks, layers, transitions, rendered MP4 export and cloud AI retouch are not implemented. Google Fonts requires an internet connection; the interface otherwise uses local files.
-
-## Local preview
-Run a static server from the repository root, for example `python -m http.server 8000`, then open `http://localhost:8000`.
+Lưu ý: Một số video YouTube chặn nhúng. Bộ dò cao độ là bản cơ bản, không phải thiết bị phòng thu.
