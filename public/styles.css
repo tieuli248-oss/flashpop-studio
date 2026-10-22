@@ -609,3 +609,92 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   margin:8px 0 2px;
  }
 }
+
+
+/* User preference: all audio sliders are vertical (drag up/down), including monitor and Auto-Tune */
+.full-controls input[type="range"],
+.full-controls .control input[type="range"],
+.full-controls .volume-control input[type="range"]{
+ display:block;
+ width:24px!important;
+ min-width:24px;
+ height:104px!important;
+ min-height:104px!important;
+ margin:8px auto 2px!important;
+ padding:0;
+ writing-mode:vertical-lr!important;
+ direction:rtl!important;
+ appearance:slider-vertical!important;
+ -webkit-appearance:slider-vertical!important;
+ accent-color:var(--pink);
+ cursor:ns-resize;
+ touch-action:pan-y;
+}
+.full-controls .control:has(>input[type="range"]){
+ display:flex;
+ flex-direction:column;
+ align-items:stretch;
+ min-width:0;
+}
+.full-controls .control:has(>input[type="range"])>div{
+ display:flex;
+ flex-direction:row;
+ justify-content:space-between;
+ align-items:center;
+ gap:8px;
+ min-height:0;
+ margin:0;
+}
+.full-controls .control:has(>input[type="range"])>div b{max-width:none;line-height:1.35}
+.full-controls .studio-vocal-controls .volume-control{
+ display:flex;
+ flex-direction:column;
+ align-items:center;
+ justify-content:flex-start;
+ gap:7px;
+ min-width:0;
+}
+.full-controls .studio-vocal-controls .volume-control input[type="range"]{
+ order:0;
+ flex:0 0 auto;
+ width:24px!important;
+ height:104px!important;
+ min-height:104px!important;
+ margin:4px auto 0!important;
+ writing-mode:vertical-lr!important;
+ direction:rtl!important;
+}
+.full-controls .control-groups>.effects>.control,
+.full-controls .control-groups>.music-controls>.control,
+.full-controls .autotune .control{
+ display:flex;
+ flex-direction:column;
+ align-items:stretch;
+ min-width:0;
+}
+.full-controls .control-groups>.effects>.control input[type="range"],
+.full-controls .control-groups>.music-controls>.control input[type="range"],
+.full-controls .autotune .control input[type="range"]{
+ width:24px!important;
+ height:104px!important;
+ min-height:104px!important;
+ margin:8px auto 2px!important;
+ writing-mode:vertical-lr!important;
+ direction:rtl!important;
+ appearance:slider-vertical!important;
+ -webkit-appearance:slider-vertical!important;
+ cursor:ns-resize;
+ touch-action:pan-y;
+}
+@media(max-width:999px){
+ .full-controls .control-groups>.control input[type="range"],
+ .full-controls .control-groups>.effects>.control input[type="range"],
+ .full-controls .control-groups>.music-controls>.control input[type="range"],
+ .full-controls .studio-vocal-controls input[type="range"],
+ .full-controls .autotune .control input[type="range"]{
+  width:24px!important;
+  height:100px!important;
+  min-height:100px!important;
+  margin:8px auto 2px!important;
+ }
+}
