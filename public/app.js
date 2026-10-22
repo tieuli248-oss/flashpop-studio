@@ -72,8 +72,8 @@ async function openCamera(){$('cameraDialog').hidden=false;$('cameraStatus').tex
  anchor.insertAdjacentElement('afterend',nav);nav.insertAdjacentElement('afterend',host);
  const panes=Object.fromEntries([...host.children].map(p=>[p.dataset.toolPane,p]));
  const classify=t=>{t=(t||'').toLowerCase();if(t.includes('makeup'))return 'beauty';if(t.includes('mood'))return 'filters';if(t.includes('sticker')||t.includes('typography')||t.includes('chèn chữ'))return 'creative';if(t.includes('xuất')||t.includes('export'))return 'export';return 'adjust'};
- let group='adjust',node=nav.nextElementSibling;
- while(node&&node!==host){const next=node.nextElementSibling;if(node.matches('.tools-title,.upload,.camera-launch,.face-status-row')){node=next;continue}if(node.matches('h3'))group=classify(node.textContent);if(node.matches('.hint')&&/Nhận diện khuôn mặt chạy/.test(node.textContent))group='beauty';if(node.matches('.export-options,#downloadPhoto,.actions'))group='export';panes[group].appendChild(node);node=next}
+ let group='adjust',node=host.nextElementSibling;
+ while(node){const next=node.nextElementSibling;if(node.matches('.tools-title,.upload,.camera-launch,.face-status-row')){node=next;continue}if(node.matches('h3'))group=classify(node.textContent);if(node.matches('.hint')&&/Nhận diện khuôn mặt chạy/.test(node.textContent))group='beauty';if(node.matches('.export-options,#downloadPhoto,.actions'))group='export';panes[group].appendChild(node);node=next}
  function activate(id){nav.querySelectorAll('button').forEach(b=>{const on=b.dataset.toolTab===id;b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on))});Object.values(panes).forEach(p=>p.hidden=p.dataset.toolPane!==id)}
  nav.addEventListener('click',e=>{const b=e.target.closest('[data-tool-tab]');if(b)activate(b.dataset.toolTab)});activate('adjust');
 })();
