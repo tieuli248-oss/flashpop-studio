@@ -17,6 +17,38 @@ softSpot(cw*.39,ch*.48,cw*.018,ch*.012,'#fff4dc',mg,Math.min(cw,ch)*.018);
 softSpot(cw*.61,ch*.48,cw*.018,ch*.012,'#fff4dc',mg,Math.min(cw,ch)*.018);
 if(sticker!=='none'){ctx.save();ctx.font='bold '+Math.round(canvas.width*.12)+'px Manrope,Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor='#0008';ctx.shadowBlur=8;ctx.fillStyle=$('textColor').value;ctx.fillText(sticker,canvas.width*.82,canvas.height*.16);ctx.restore()}const caption=$('overlayText').value.trim();if(caption){const size=+$('textSize').value;ctx.save();ctx.font='800 '+size+'px Manrope,Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';ctx.lineWidth=Math.max(2,size*.09);ctx.strokeStyle='rgba(0,0,0,.62)';ctx.fillStyle=$('textColor').value;const lines=wrapText(ctx,caption,canvas.width*.84);const block=lines.length*size*1.18;let y=$('textPosition').value==='top'?block/2+canvas.height*.06:$('textPosition').value==='center'?canvas.height/2:canvas.height-block/2-canvas.height*.06;lines.forEach((line,i)=>{const yy=y+(i-(lines.length-1)/2)*size*1.18;ctx.strokeText(line,canvas.width/2,yy);ctx.fillText(line,canvas.width/2,yy)});ctx.restore()}
 $('photoEmpty').hidden=true;canvas.hidden=false;$('downloadPhoto').disabled=false;$('compare').disabled=false;$('photoInfo').textContent=image.naturalWidth+' × '+image.naturalHeight+' px';}
+
+function setPreset(name){
+ const presets={
+  clean:{brightness:106,contrast:98,saturation:92,warmth:5,vignette:5,blur:0,filter:'glow',makeupBlush:12,makeupLip:12,makeupEye:4,makeupGlow:10,color:'#e9a47d'},
+  y2k:{brightness:104,contrast:108,saturation:125,warmth:3,vignette:10,blur:0,filter:'pink',makeupBlush:24,makeupLip:24,makeupEye:18,makeupGlow:14,color:'#ff719d'},
+  film:{brightness:98,contrast:112,saturation:84,warmth:18,vignette:22,blur:0,filter:'film',makeupBlush:8,makeupLip:10,makeupEye:0,makeupGlow:4,color:'#bd8d9f'}
+ };
+ if(name==='reset'){
+  ranges.forEach(k=>$(k).value=k==='brightness'||k==='contrast'||k==='saturation'?100:0);
+  ['makeupBlush','makeupLip','makeupEye','makeupGlow'].forEach(id=>$(id).value=0);
+  makeupColor='#ff719d';filter='none';angle=0;flip=false;original=null;cropRatio='free';sticker='none';
+  $('overlayText').value='';$('textPosition').value='bottom';$('textColor').value='#ffffff';$('textSize').value='42';
+ }else{
+  const p=presets[name];if(!p)return;
+  ranges.forEach(k=>$(k).value=p[k]);
+  ['makeupBlush','makeupLip','makeupEye','makeupGlow'].forEach(k=>$(k).value=p[k]);
+  makeupColor=p.color;filter=p.filter;
+ }
+ ranges.forEach(k=>{$(k+'Val').textContent=k==='warmth'?$(k).value:k==='blur'?$(k).value+'px':$(k).value+'%'});
+ ['makeupBlush','makeupLip','makeupEye','makeupGlow'].forEach(k=>$(k+'Val').textContent=$(k).value+'%');
+ document.querySelectorAll('.filter[data-filter]').forEach(b=>b.classList.toggle('selected',b.dataset.filter===filter));
+ document.querySelectorAll('[data-makeup-color]').forEach(b=>b.classList.toggle('selected',b.dataset.makeupColor===makeupColor));
+ document.querySelectorAll('[data-preset]').forEach(b=>b.classList.toggle('selected',b.dataset.preset===name));
+ document.querySelectorAll('[data-crop]').forEach(b=>b.classList.toggle('selected',b.dataset.crop===cropRatio));
+ document.querySelectorAll('[data-sticker]').forEach(b=>b.classList.toggle('selected',b.dataset.sticker===sticker));
+ draw();snapshot();
+}
+document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>setPreset(b.dataset.preset)));
+$('quickUndo').onclick=()=>$('undoEdit').click();
+$('quickRedo').onclick=()=>$('redoEdit').click();
+$('quickExport').onclick=()=>$('downloadPhoto').click();
+
 function wrapText(c,text,max){const words=text.split(/\s+/),lines=[];let line='';for(const word of words){const test=line?line+' '+word:word;if(c.measureText(test).width>max&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line);return lines}
 function snapshot(){if(!image)return;const state={ranges:values(),filter,angle,flip,caption:$('overlayText').value,pos:$('textPosition').value,color:$('textColor').value,size:$('textSize').value,format:$('exportFormat').value,cropRatio,sticker,makeupColor,makeupBlush:$('makeupBlush').value,makeupLip:$('makeupLip').value,makeupEye:$('makeupEye').value,makeupGlow:$('makeupGlow').value};if(historyIndex>=0&&JSON.stringify(history[historyIndex])===JSON.stringify(state))return;history=history.slice(0,historyIndex+1);history.push(state);if(history.length>40)history.shift();historyIndex=history.length-1;updateHistory()}
 function updateHistory(){$('undoEdit').disabled=historyIndex<=0;$('redoEdit').disabled=historyIndex<0||historyIndex>=history.length-1;$('historyLabel').textContent=history.length?('Bước '+(historyIndex+1)+' / '+history.length):'Lịch sử chỉnh sửa'}
