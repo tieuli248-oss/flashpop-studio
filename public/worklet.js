@@ -26,7 +26,7 @@ class GrainPitchShifter{
 }
 class KaraokeTuneProcessor extends AudioWorkletProcessor{
  constructor(){
-  super();this.buf=new Float32Array(1024);this.hop=32;this.pos=0;this.shifter=new GrainPitchShifter();
+  super();this.buf=new Float32Array(1024);this.chunk=new Float32Array(32);this.hop=32;this.pos=0;this.shifter=new GrainPitchShifter();
   this.root=0;this.scale=1;this.strength=75;this.enabled=true;this.speed=18;
   this.detected=-1;this.corrected=-1;this.targetRatio=1;this.ratio=1;this.lock=-1;this.silence=0;this.count=0;
   this.port.onmessage=e=>{const d=e.data||{};if(d.root!==undefined)this.root=d.root;if(d.scale!==undefined)this.scale=d.scale;if(d.strength!==undefined)this.strength=d.strength;if(d.enabled!==undefined)this.enabled=d.enabled;if(d.speed!==undefined)this.speed=d.speed;};
@@ -52,8 +52,8 @@ class KaraokeTuneProcessor extends AudioWorkletProcessor{
  process(inputs,outputs){
   const input=inputs[0]?.[0],out=outputs[0]?.[0];if(!input||!out)return true;
   for(let i=0;i<input.length;i++){
-   const x=input[i];this.buf.copyWithin(0,1);this.buf[this.buf.length-1]=x;
-   if(++this.count>=this.hop){this.count=0;this.detect();this.port.postMessage({detectedNote:this.detected,correctedNote:this.corrected});}
+   const x=input[i];this.chunk[this.count]=x;this.count++;
+   if(this.count>=this.hop){this.buf.copyWithin(0,this.hop);this.buf.set(this.chunk,this.buf.length-this.hop);this.count=0;this.detect();this.port.postMessage({detectedNote:this.detected,correctedNote:this.corrected});}
    const coeff=this.speed<=0?1:1-Math.exp(-1/(this.speed*sampleRate/1000));
    this.ratio+=(this.targetRatio-this.ratio)*coeff;
    out[i]=this.enabled?this.shifter.process(x,this.ratio):x;
