@@ -1,8 +1,9 @@
 (() => {
 "use strict";
 const $ = id => document.getElementById(id);
+let chosenMicDevice="";
 const searchForm=$("searchForm"), queryInput=$("songQuery"), resultsBox=$("searchResults"), urlForm=$("youtubeForm"), urlInput=$("youtubeUrl"), frame=$("videoFrame"), msg=$("playerMessage");
-let player=null,pendingId=null,stream=null,ctx=null,source=null,gain=null,analyser=null,monitorGain=null,raf=null,lastUpdate=0,searchController=null;
+let player=null,pendingId=null,stream=null,ctx=null,source=null,gain=null,analyser=null,monitorGain=null,raf=null,lastUpdate=0,searchController=null,highPassFilter=null,micCompressor=null;
 const searchInstances=[
  "https://inv.nadeko.net/api/v1/search",
  "https://invidious.nerdvpn.de/api/v1/search",
@@ -31,23 +32,26 @@ async function startMic(){
  const AC=window.AudioContext||window.webkitAudioContext;
  ctx=new AC({latencyHint:"interactive"});
  await ctx.resume();
- stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}});
+ const micConstraints={echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1};if(chosenMicDevice)micConstraints.deviceId={exact:chosenMicDevice};stream=await navigator.mediaDevices.getUserMedia({audio:micConstraints});
  source=ctx.createMediaStreamSource(stream);gain=ctx.createGain();analyser=ctx.createAnalyser();monitorGain=ctx.createGain();
  analyser.fftSize=2048;monitorGain.gain.value=0;gain.gain.value=Number($("gainSlider").value)/100;
  await ctx.audioWorklet.addModule("/worklet.js");
  tuneNode=new AudioWorkletNode(ctx,"karaoke-tune-processor",{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[1]});
  tuneNode.port.onmessage=e=>{detectedNote=e.data.detectedNote;correctedNote=e.data.correctedNote;const m=detectedNote;if(m>=0){$("noteName").textContent=noteFromMidi(m);$("frequency").textContent=(440*Math.pow(2,(m-69)/12)).toFixed(1)+" Hz";$("noteDescription").textContent=correctedNote>=0?"Auto-Tune mục tiêu: "+noteFromMidi(correctedNote):"Đang dò cao độ";$("tunerNeedle").style.left="50%";}else{$("noteName").textContent="—";$("frequency").textContent="— Hz";$("noteDescription").textContent="Hát một nốt rõ để dò";$("tunerNeedle").style.left="50%";}};
  source.connect(gain);gain.connect(tuneNode);tuneNode.connect(analyser);
+ highPassFilter=ctx.createBiquadFilter();highPassFilter.type="highpass";highPassFilter.frequency.value=85;highPassFilter.Q.value=0.707;
+ micCompressor=ctx.createDynamicsCompressor();micCompressor.threshold.value=-10;micCompressor.knee.value=12;micCompressor.ratio.value=3;micCompressor.attack.value=0.006;micCompressor.release.value=0.18;
  bassFilter=ctx.createBiquadFilter();bassFilter.type="lowshelf";bassFilter.frequency.value=180;bassFilter.gain.value=0;
  echoDelay=ctx.createDelay(1.2);echoDelay.delayTime.value=0.24;echoFeedback=ctx.createGain();echoWet=ctx.createGain();echoFeedback.gain.value=0.18;echoWet.gain.value=0;
- tuneNode.connect(bassFilter);
+ tuneNode.connect(bassFilter);bassFilter.connect(highPassFilter);
  feedbackAnalyser=ctx.createAnalyser();feedbackAnalyser.fftSize=8192;feedbackAnalyser.smoothingTimeConstant=0;
- bassFilter.connect(feedbackAnalyser);
+ highPassFilter.connect(feedbackAnalyser);
  let last=feedbackAnalyser;
  feedbackNotches=[];
  for(let i=0;i<3;i++){const n=ctx.createBiquadFilter();n.type="notch";n.frequency.value=1000+i*700;n.Q.value=12;feedbackNotches.push(n);last.connect(n);last=n;}
- last.connect(monitorGain);bassFilter.connect(echoDelay);echoDelay.connect(echoWet);echoWet.connect(monitorGain);echoDelay.connect(echoFeedback);echoFeedback.connect(echoDelay);monitorGain.connect(ctx.destination);
+ last.connect(micCompressor);micCompressor.connect(monitorGain);highPassFilter.connect(echoDelay);echoDelay.connect(echoWet);echoWet.connect(monitorGain);echoDelay.connect(echoFeedback);echoFeedback.connect(echoDelay);monitorGain.connect(ctx.destination);
  startFeedbackGuard();
+ updateMicGain();
  updateEffects();
  sendTuneSettings();
  if($("monitorToggle").checked)monitorGain.gain.setTargetAtTime(Number($("monitorVolume").value)/100,ctx.currentTime,.03);
@@ -55,16 +59,21 @@ async function startMic(){
  $("micHelp").textContent="Có thể phát giọng ra loa ngoài. Bắt đầu âm lượng loa và nghe micro thấp, để micro phía sau loa và tăng từ từ; phần mềm chỉ giảm nguy cơ hú, không thể triệt hú tuyệt đối.";
 }
 function tick(){}
+function updateMicGain(){if(gain&&ctx){const base=Number($("gainSlider").value)/100;const mic=Number($("micVolumeSlider")?$("micVolumeSlider").value:100)/100;gain.gain.setTargetAtTime(Math.max(0,Math.min(2,base*mic)),ctx.currentTime,.025);}}
 function stopMic(){
  if(stream)stream.getTracks().forEach(t=>t.stop());
  if(ctx&&ctx.state!=="closed")ctx.close().catch(()=>{});
- if(feedbackTimer)clearInterval(feedbackTimer);feedbackTimer=null;feedbackAnalyser=null;feedbackNotches=[];feedbackCandidates={};stream=ctx=source=gain=analyser=monitorGain=tuneNode=bassFilter=echoDelay=echoFeedback=echoWet=null;detectedNote=correctedNote=-1;
+ if(feedbackTimer)clearInterval(feedbackTimer);feedbackTimer=null;feedbackAnalyser=null;feedbackNotches=[];feedbackCandidates={};stream=ctx=source=gain=analyser=monitorGain=tuneNode=bassFilter=highPassFilter=micCompressor=echoDelay=echoFeedback=echoWet=null;detectedNote=correctedNote=-1;
  $("monitorToggle").checked=false;$("micStatus").textContent="CHƯA KẾT NỐI";$("micStatus").classList.remove("active");$("micButton").classList.remove("enabled");$("micButton").textContent="🎤 Bật micro";
  $("noteName").textContent="—";$("frequency").textContent="— Hz";$("noteDescription").textContent="Bật micro để dò nốt";$("tunerNeedle").style.left="50%";
  $("micHelp").textContent="Auto-Tune cần HTTPS hoặc localhost và quyền micro. Đeo tai nghe khi bật nghe giọng.";
 }
-$("micButton").addEventListener("click",async()=>{if(stream){stopMic();return;}const b=$("micButton");b.disabled=true;b.textContent="Đang kết nối micro…";try{await startMic()}catch(e){stopMic();$("micHelp").textContent=(e.message||"Không thể bật micro.")+" Nếu trình duyệt báo lỗi AudioWorklet, tải lại trang."; }finally{b.disabled=false;}});
-$("gainSlider").addEventListener("input",()=>{$("gainValue").textContent=$("gainSlider").value+"%";if(gain&&ctx)gain.gain.setTargetAtTime(Number($("gainSlider").value)/100,ctx.currentTime,.02);});
+async function refreshMicDevices(){const select=$("micDeviceSelect");if(!select||!navigator.mediaDevices?.enumerateDevices)return;const old=chosenMicDevice;try{const devices=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==="audioinput");select.innerHTML="";const def=document.createElement("option");def.value="";def.textContent="Micro mặc định của máy";select.appendChild(def);devices.forEach((d,i)=>{const o=document.createElement("option");o.value=d.deviceId;o.textContent=d.label||("Micro "+(i+1));select.appendChild(o);});if([...select.options].some(o=>o.value===old))select.value=old;else chosenMicDevice=select.value;}catch(e){select.innerHTML="<option value=\"\">Không thể liệt kê micro</option>";}}
+if($("refreshMicDevices"))$("refreshMicDevices").addEventListener("click",refreshMicDevices);
+if($("micDeviceSelect"))$("micDeviceSelect").addEventListener("change",async()=>{chosenMicDevice=$("micDeviceSelect").value;if(stream){stopMic();try{await startMic();}catch(e){stopMic();$("micHelp").textContent="Không mở được micro đã chọn: "+(e.message||"lỗi thiết bị");}}});
+$("micButton").addEventListener("click",async()=>{if(stream){stopMic();return;}const b=$("micButton");b.disabled=true;b.textContent="Đang kết nối micro…";try{await startMic();await refreshMicDevices()}catch(e){stopMic();$("micHelp").textContent=(e.message||"Không thể bật micro.")+" Nếu trình duyệt báo lỗi AudioWorklet, tải lại trang."; }finally{b.disabled=false;}});
+$("gainSlider").addEventListener("input",()=>{$("gainValue").textContent=$("gainSlider").value+"%";updateMicGain();});
+if($("micVolumeSlider"))$("micVolumeSlider").addEventListener("input",()=>{$("micVolumeValue").textContent=$("micVolumeSlider").value+"%";updateMicGain();});
 $("monitorToggle").addEventListener("change",()=>{if(!monitorGain||!ctx){if($("monitorToggle").checked){$("monitorToggle").checked=false;$("micHelp").textContent="Bật micro trước rồi mới bật nghe lại tiếng micro.";}return;}monitorGain.gain.setTargetAtTime($("monitorToggle").checked?Number($("monitorVolume").value)/100:0,ctx.currentTime,.03);});
 $("monitorVolume").addEventListener("input",()=>{$("monitorValue").textContent=$("monitorVolume").value+"%";if(monitorGain&&ctx&&$("monitorToggle").checked)monitorGain.gain.setTargetAtTime(Number($("monitorVolume").value)/100,ctx.currentTime,.03);});
 $("autotuneStrength").addEventListener("input",()=>{$("autotuneValue").textContent=$("autotuneStrength").value+"%";sendTuneSettings();});
@@ -177,12 +186,13 @@ function updateEffects(){
  if(echoWet)echoWet.gain.setTargetAtTime(echo,ctx.currentTime,.04);
  if(echoFeedback)echoFeedback.gain.setTargetAtTime(Math.min(.38,echo*.55),ctx.currentTime,.04);
  if(echoDelay)echoDelay.delayTime.setTargetAtTime(delayMs/1000,ctx.currentTime,.04);
- if(bassFilter)bassFilter.gain.setTargetAtTime(bass*.18,ctx.currentTime,.04);
+ if(bassFilter)bassFilter.gain.setTargetAtTime(Math.max(-3,Math.min(6,(bass-25)*.12)),ctx.currentTime,.04);
 }
 $("echoSlider").addEventListener("input",updateEffects);
 $("delaySlider").addEventListener("input",updateEffects);
 $("bassSlider").addEventListener("input",updateEffects);
 updateEffects();
+if($("micVolumeSlider"))$("micVolumeValue").textContent=$("micVolumeSlider").value+"%";
 if($("feedbackToggle"))$("feedbackToggle").addEventListener("change",()=>{if($("feedbackStatus"))$("feedbackStatus").textContent=$("feedbackToggle").checked?"ĐANG GIÁM SÁT":"ĐÃ TẮT";if(!$("feedbackToggle").checked&&ctx)feedbackNotches.forEach(n=>{n.frequency.setTargetAtTime(20000,ctx.currentTime,.04);n.Q.setTargetAtTime(1,ctx.currentTime,.04);});});
 window.addEventListener("beforeunload",stopMic);
 })();
