@@ -2,6 +2,7 @@
 "use strict";
 const $ = id => document.getElementById(id);
 let chosenMicDevice="";
+const isMobileDevice=()=>/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||((navigator.maxTouchPoints||0)>1&&/Macintosh/i.test(navigator.userAgent));
 const searchForm=$("searchForm"), queryInput=$("songQuery"), resultsBox=$("searchResults"), urlForm=$("youtubeForm"), urlInput=$("youtubeUrl"), frame=$("videoFrame"), msg=$("playerMessage");
 let player=null,pendingId=null,stream=null,ctx=null,source=null,gain=null,analyser=null,monitorGain=null,raf=null,lastUpdate=0,searchController=null,highPassFilter=null,micCompressor=null;
 const searchInstances=[
@@ -56,7 +57,7 @@ async function startMic(){
  sendTuneSettings();
  if($("monitorToggle").checked)monitorGain.gain.setTargetAtTime(Number($("monitorVolume").value)/100,ctx.currentTime,.03);
  $("micStatus").textContent="MIC ĐANG BẬT";$("micStatus").classList.add("active");$("micButton").classList.add("enabled");$("micButton").textContent="⏹ Tắt micro";
- $("micHelp").textContent="Có thể phát giọng ra loa ngoài. Bắt đầu âm lượng loa và nghe micro thấp, để micro phía sau loa và tăng từ từ; phần mềm chỉ giảm nguy cơ hú, không thể triệt hú tuyệt đối.";
+ $("micHelp").textContent=isMobileDevice()?"Có thể hát bằng loa điện thoại hoặc loa ngoài. Để mặc định để dùng đầu vào của điện thoại; nếu tai nghe làm đổi micro, rút tai nghe để chắc chắn dùng micro máy. Bắt đầu âm lượng thấp và giảm ngay nếu hú.":"Có thể phát giọng ra loa ngoài. Bắt đầu âm lượng loa và nghe micro thấp, để micro phía sau loa và tăng từ từ; phần mềm chỉ giảm nguy cơ hú, không thể triệt hú tuyệt đối.";
 }
 function tick(){}
 function updateMicGain(){if(gain&&ctx){const base=Number($("gainSlider").value)/100;const mic=Number($("micVolumeSlider")?$("micVolumeSlider").value:100)/100;gain.gain.setTargetAtTime(Math.max(0,Math.min(2,base*mic)),ctx.currentTime,.025);}}
@@ -68,7 +69,7 @@ function stopMic(){
  $("noteName").textContent="—";$("frequency").textContent="— Hz";$("noteDescription").textContent="Bật micro để dò nốt";$("tunerNeedle").style.left="50%";
  $("micHelp").textContent="Auto-Tune cần HTTPS hoặc localhost và quyền micro. Đeo tai nghe khi bật nghe giọng.";
 }
-async function refreshMicDevices(){const select=$("micDeviceSelect");if(!select||!navigator.mediaDevices?.enumerateDevices)return;const old=chosenMicDevice;try{const devices=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==="audioinput");select.innerHTML="";const def=document.createElement("option");def.value="";def.textContent="Micro mặc định của máy";select.appendChild(def);devices.forEach((d,i)=>{const o=document.createElement("option");o.value=d.deviceId;o.textContent=d.label||("Micro "+(i+1));select.appendChild(o);});if([...select.options].some(o=>o.value===old))select.value=old;else chosenMicDevice=select.value;}catch(e){select.innerHTML="<option value=\"\">Không thể liệt kê micro</option>";}}
+async function refreshMicDevices(){const select=$("micDeviceSelect");if(!select||!navigator.mediaDevices?.enumerateDevices)return;const old=chosenMicDevice;try{const devices=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==="audioinput");select.innerHTML="";const def=document.createElement("option");def.value="";def.textContent=isMobileDevice()?"Micro điện thoại / mặc định":"Micro mặc định của máy";select.appendChild(def);devices.forEach((d,i)=>{const o=document.createElement("option");o.value=d.deviceId;o.textContent=d.label||("Micro "+(i+1));if(isMobileDevice()&&/built.?in|phone|back mic|front mic|microphone array|micro điện thoại/i.test(d.label||""))o.textContent+=" · có thể là micro máy";select.appendChild(o);});if([...select.options].some(o=>o.value===old))select.value=old;else chosenMicDevice=select.value;}catch(e){select.innerHTML="<option value=\"\">Không thể liệt kê micro</option>";}}
 if($("refreshMicDevices"))$("refreshMicDevices").addEventListener("click",refreshMicDevices);
 if($("micDeviceSelect"))$("micDeviceSelect").addEventListener("change",async()=>{chosenMicDevice=$("micDeviceSelect").value;if(stream){stopMic();try{await startMic();}catch(e){stopMic();$("micHelp").textContent="Không mở được micro đã chọn: "+(e.message||"lỗi thiết bị");}}});
 $("micButton").addEventListener("click",async()=>{if(stream){stopMic();return;}const b=$("micButton");b.disabled=true;b.textContent="Đang kết nối micro…";try{await startMic();await refreshMicDevices()}catch(e){stopMic();$("micHelp").textContent=(e.message||"Không thể bật micro.")+" Nếu trình duyệt báo lỗi AudioWorklet, tải lại trang."; }finally{b.disabled=false;}});
