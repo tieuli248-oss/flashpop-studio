@@ -101,7 +101,7 @@ function updateEffects(){
  if(echoWet)echoWet.gain.setTargetAtTime(echo,ctx.currentTime,.04);
  if(echoFeedback)echoFeedback.gain.setTargetAtTime(Math.min(.38,echo*.55),ctx.currentTime,.04);
  if(echoDelay)echoDelay.delayTime.setTargetAtTime(delayMs/1000,ctx.currentTime,.04);
- if(bassFilter)bassFilter.gain.setTargetAtTime(bass*.12,ctx.currentTime,.04);
+ if(bassFilter)bassFilter.gain.setTargetAtTime(bass*.18,ctx.currentTime,.04);
 }
 $("echoSlider").addEventListener("input",updateEffects);
 $("delaySlider").addEventListener("input",updateEffects);
