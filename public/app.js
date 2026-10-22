@@ -81,6 +81,62 @@ function analyzeSongBuffer(buf){
 }
 $("analyzeTone").addEventListener("click",async()=>{if(!selectedAudioFile){$("toneStatus").textContent="CHỌN FILE TRƯỚC";$("toneHelp").textContent="Chọn file nhạc phía trên rồi bấm phân tích.";return;}const btn=$("analyzeTone");btn.disabled=true;$("useDetectedKey").disabled=true;$("toneStatus").textContent="ĐANG PHÂN TÍCH";$("detectedKey").textContent="…";try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)throw Error("Trình duyệt không hỗ trợ Web Audio.");if(!analysisAudioContext||analysisAudioContext.state==="closed")analysisAudioContext=new AC();const buf=await analysisAudioContext.decodeAudioData(await selectedAudioFile.arrayBuffer());const r=analyzeSongBuffer(buf);$("detectedKey").textContent=NOTE_NAMES[r.root]+" ("+NOTE_LATIN[r.root]+")";$("detectedScale").textContent=r.scale+" · "+Math.round(r.confidence*100)+"% phân biệt tương đối";$("toneStatus").textContent="ĐÃ PHÂN TÍCH";$("toneHelp").textContent="Ước lượng từ "+r.frames+" đoạn âm thanh; kết quả không phải bảo đảm chính xác tuyệt đối.";const use=$("useDetectedKey");use.dataset.root=String(r.root);use.dataset.scale=r.scale==="Thứ"?"2":"1";use.disabled=false;}catch(e){$("toneStatus").textContent="LỖI PHÂN TÍCH";$("detectedScale").textContent=e.message||"Thử file MP3, WAV hoặc M4A";}finally{btn.disabled=false;}});
 $("useDetectedKey").addEventListener("click",()=>{if($("useDetectedKey").disabled)return;$("keySelect").selectedIndex=Number($("useDetectedKey").dataset.root||0);$("scaleSelect").value=$("useDetectedKey").dataset.scale||"1";sendTuneSettings();$("autotuneStatus").textContent="Đã áp dụng tông ước lượng từ file nhạc cho Auto-Tune của micro. Nếu nghe lệch, chỉnh tông thủ công.";});
+let tabCapture=null,tabAudioContext=null,tabAnalyser=null,tabSource=null,tabCaptureTimer=null,tabChroma=Array(12).fill(0),tabFrames=0;
+function finishTabCapture(message){
+ if(tabCaptureTimer)clearInterval(tabCaptureTimer);tabCaptureTimer=null;
+ if(tabCapture)tabCapture.getTracks().forEach(t=>t.stop());tabCapture=null;
+ if(tabAudioContext&&tabAudioContext.state!=="closed")tabAudioContext.close().catch(()=>{});
+ tabAudioContext=tabAnalyser=tabSource=null;
+ $("analyzeYouTubeTone").disabled=false;
+ if(message)$("toneHelp").textContent=message;
+}
+$("analyzeYouTubeTone").addEventListener("click",async()=>{
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia){$("toneStatus").textContent="TRÌNH DUYỆT CHƯA HỖ TRỢ";$("toneHelp").textContent="Dùng Chrome/Edge trên máy tính hoặc chọn file nhạc bên dưới.";return;}
+ if(tabCapture){finishTabCapture("Đã dừng thu âm thanh tab.");$("toneStatus").textContent="ĐÃ DỪNG";return;}
+ try{
+  $("analyzeYouTubeTone").disabled=true;
+  $("toneStatus").textContent="ĐANG XIN QUYỀN";
+  $("toneHelp").textContent="Trong hộp thoại chia sẻ, chọn tab đang phát YouTube và bật chia sẻ âm thanh tab. Nếu không chọn âm thanh, bộ dò sẽ không nhận được nhạc.";
+  tabCapture=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true,preferCurrentTab:true,systemAudio:"include",selfBrowserSurface:"include"});
+  if(!tabCapture.getAudioTracks().length)throw Error("Không nhận được âm thanh. Hãy dừng chia sẻ và chọn lại tab YouTube, nhớ bật Chia sẻ âm thanh tab.");
+  const AC=window.AudioContext||window.webkitAudioContext;tabAudioContext=new AC();await tabAudioContext.resume();
+  tabAnalyser=tabAudioContext.createAnalyser();tabAnalyser.fftSize=16384;tabAnalyser.smoothingTimeConstant=0;
+  tabSource=tabAudioContext.createMediaStreamSource(new MediaStream(tabCapture.getAudioTracks()));tabSource.connect(tabAnalyser);
+  const bins=new Float32Array(tabAnalyser.frequencyBinCount);tabChroma=Array(12).fill(0);tabFrames=0;
+  $("toneStatus").textContent="NGHE NHẠC 20 GIÂY";$("detectedKey").textContent="…";$("detectedScale").textContent="Đang phân tích âm thanh tab";$("useDetectedKey").disabled=true;$("analyzeYouTubeTone").textContent="■ Dừng dò âm thanh";
+  $("analyzeYouTubeTone").disabled=false;
+  tabCapture.getTracks().forEach(track=>track.addEventListener("ended",()=>{if(tabCapture)finishTabCapture("Chia sẻ tab đã kết thúc.");}));
+  const start=Date.now();
+  tabCaptureTimer=setInterval(()=>{
+   if(!tabAnalyser)return;
+   tabAnalyser.getFloatFrequencyData(bins);
+   const frame=Array(12).fill(0),sr=tabAudioContext.sampleRate,fft=tabAnalyser.fftSize;
+   for(let midi=36;midi<=84;midi++){
+    const f=440*Math.pow(2,(midi-69)/12),bin=Math.round(f*fft/sr);
+    if(bin>1&&bin<bins.length-1){
+     const db=Math.max(-100,bins[bin-1])+Math.max(-100,bins[bin])+Math.max(-100,bins[bin+1]);
+     frame[midi%12]+=Math.pow(10,db/20);
+    }
+   }
+   const sum=frame.reduce((a,b)=>a+b,0);
+   if(sum>0){for(let n=0;n<12;n++)tabChroma[n]+=frame[n]/sum;tabFrames++;}
+   const remain=Math.max(0,20-Math.floor((Date.now()-start)/1000));
+   $("toneStatus").textContent="NGHE NHẠC "+remain+" GIÂY";
+   if(Date.now()-start>=20000){
+    clearInterval(tabCaptureTimer);tabCaptureTimer=null;
+    let best={score:-Infinity,root:0,scale:"Trưởng"},runner=-Infinity;
+    for(let root=0;root<12;root++)for(const [scale,profile] of [["Trưởng",MAJOR],["Thứ",MINOR]]){
+     let score=0;for(let n=0;n<12;n++)score+=tabChroma[(n+root)%12]*profile[n];
+     if(score>best.score){runner=best.score;best={score,root,scale};}else if(score>runner)runner=score;
+    }
+    if(tabFrames<15){$("toneStatus").textContent="ÂM THANH QUÁ NHỎ";$("detectedScale").textContent="Chưa đủ tín hiệu";$("toneHelp").textContent="Tăng âm lượng YouTube, kiểm tra chia sẻ âm thanh tab rồi thử lại.";}
+    else{$("detectedKey").textContent=NOTE_NAMES[best.root]+" ("+NOTE_LATIN[best.root]+")";$("detectedScale").textContent=best.scale+" · phân tích trực tiếp tab";$("toneStatus").textContent="ĐÃ PHÂN TÍCH";$("toneHelp").textContent="Ước lượng từ âm thanh tab được mày chủ động chia sẻ. Độ chính xác có thể giảm nếu có lời nói, quảng cáo hoặc bài đổi tông.";const use=$("useDetectedKey");use.dataset.root=String(best.root);use.dataset.scale=best.scale==="Thứ"?"2":"1";use.disabled=false;}
+    finishTabCapture();
+    $("analyzeYouTubeTone").textContent="▶ Dò âm thanh tab đang phát";
+   }
+  },250);
+ }catch(e){finishTabCapture();$("toneStatus").textContent="CHƯA THỂ DÒ";$("toneHelp").textContent=e.message||"Không thể lấy âm thanh tab. Thử lại hoặc dùng file nhạc.";$("analyzeYouTubeTone").textContent="▶ Dò âm thanh tab đang phát";}
+});
 function updateEffects(){
  const echo=Number($("echoSlider").value)/100,bass=Number($("bassSlider").value),delayMs=Number($("delaySlider").value);
  $("echoValue").textContent=$("echoSlider").value+"%";$("bassValue").textContent=$("bassSlider").value+"%";$("delayValue").textContent=delayMs+" ms";
