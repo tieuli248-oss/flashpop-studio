@@ -37,7 +37,11 @@ async function startMic(){
  await ctx.audioWorklet.addModule("/worklet.js");
  tuneNode=new AudioWorkletNode(ctx,"karaoke-tune-processor",{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[1]});
  tuneNode.port.onmessage=e=>{detectedNote=e.data.detectedNote;correctedNote=e.data.correctedNote;const m=detectedNote;if(toneActive&&m>=0&&m!==lastToneNote){toneCounts[((m%12)+12)%12]++;lastToneNote=m;updateToneEstimate();}if(m>=0){$("noteName").textContent=noteFromMidi(m);$("frequency").textContent=(440*Math.pow(2,(m-69)/12)).toFixed(1)+" Hz";$("noteDescription").textContent=correctedNote>=0?"Auto-Tune mục tiêu: "+noteFromMidi(correctedNote):"Đang dò cao độ";$("tunerNeedle").style.left="50%";}else{$("noteName").textContent="—";$("frequency").textContent="— Hz";$("noteDescription").textContent="Hát một nốt rõ để dò";$("tunerNeedle").style.left="50%";}};
- source.connect(gain);gain.connect(tuneNode);tuneNode.connect(analyser);\n bassFilter=ctx.createBiquadFilter();bassFilter.type="lowshelf";bassFilter.frequency.value=180;bassFilter.gain.value=0;\n echoDelay=ctx.createDelay(1.2);echoDelay.delayTime.value=0.24;echoFeedback=ctx.createGain();echoWet=ctx.createGain();echoFeedback.gain.value=0.18;echoWet.gain.value=0;\n tuneNode.connect(bassFilter);bassFilter.connect(monitorGain);bassFilter.connect(echoDelay);echoDelay.connect(echoWet);echoWet.connect(monitorGain);echoDelay.connect(echoFeedback);echoFeedback.connect(echoDelay);monitorGain.connect(ctx.destination);\n updateEffects();
+ source.connect(gain);gain.connect(tuneNode);tuneNode.connect(analyser);
+ bassFilter=ctx.createBiquadFilter();bassFilter.type="lowshelf";bassFilter.frequency.value=180;bassFilter.gain.value=0;
+ echoDelay=ctx.createDelay(1.2);echoDelay.delayTime.value=0.24;echoFeedback=ctx.createGain();echoWet=ctx.createGain();echoFeedback.gain.value=0.18;echoWet.gain.value=0;
+ tuneNode.connect(bassFilter);bassFilter.connect(monitorGain);bassFilter.connect(echoDelay);echoDelay.connect(echoWet);echoWet.connect(monitorGain);echoDelay.connect(echoFeedback);echoFeedback.connect(echoDelay);monitorGain.connect(ctx.destination);
+ updateEffects();
  sendTuneSettings();
  if($("monitorToggle").checked)monitorGain.gain.setTargetAtTime(Number($("monitorVolume").value)/100,ctx.currentTime,.03);
  $("micStatus").textContent="MIC ĐANG BẬT";$("micStatus").classList.add("active");$("micButton").classList.add("enabled");$("micButton").textContent="⏹ Tắt micro";
@@ -100,5 +104,6 @@ function updateEffects(){
 }
 $("echoSlider").addEventListener("input",updateEffects);
 $("bassSlider").addEventListener("input",updateEffects);
-\nwindow.addEventListener("beforeunload",stopMic);
+
+window.addEventListener("beforeunload",stopMic);
 })();
