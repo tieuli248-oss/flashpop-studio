@@ -171,3 +171,79 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
  .lower{margin-top:10px}.lower .panel{padding:13px}.notePanel{gap:11px}.disc{width:43px;height:43px;font-size:21px}
  footer{padding:16px 0 20px;font-size:8px}
 }
+
+
+/* Vertical faders: drag up to increase, down to decrease */
+input[type="range"]{
+  -webkit-appearance:slider-vertical;
+  appearance:auto;
+  writing-mode:vertical-lr;
+  direction:rtl;
+  width:24px;
+  height:112px;
+  min-height:112px;
+  margin:8px auto 2px;
+  padding:0;
+  accent-color:#c6a1e5;
+  cursor:ns-resize;
+  touch-action:pan-y;
+}
+.control:has(> input[type="range"]){
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+}
+.control:has(> input[type="range"])>div{
+  min-height:31px;
+  align-items:flex-start;
+}
+.control:has(> input[type="range"])>div b{
+  max-width:calc(100% - 48px);
+  line-height:1.45;
+}
+.control:has(> input[type="range"])>input[type="range"]{
+  align-self:center;
+}
+.effects,.music-controls{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:stretch;
+  gap:8px;
+}
+.effects>.tone-title,.effects>p,.music-controls>.tone-title{
+  flex:0 0 100%;
+}
+.effects>.control,.music-controls>.control{
+  flex:1 1 82px;
+  min-width:76px;
+  margin:0;
+  padding:10px 7px 7px;
+  border:1px solid #292930;
+  border-radius:8px;
+  background:#141419;
+}
+.monitor-row .volume-control{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+}
+.monitor-row .volume-control input[type="range"]{
+  order:3;
+  flex:0 0 100%;
+  width:100%;
+  height:24px;
+  min-height:24px;
+  margin:8px 0 0;
+  writing-mode:horizontal-tb;
+  direction:ltr;
+  -webkit-appearance:auto;
+  appearance:auto;
+  cursor:ew-resize;
+}
+@media(max-width:520px){
+  input[type="range"]{height:100px;min-height:100px;width:22px}
+  .effects,.music-controls{gap:6px}
+  .effects>.control,.music-controls>.control{flex-basis:calc(33.333% - 6px);min-width:68px;padding:9px 5px 6px}
+  .control:has(> input[type="range"])>div b{font-size:9px}
+}
