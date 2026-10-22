@@ -1,5 +1,16 @@
 (()=>{const $=id=>document.getElementById(id);let image=null,angle=0,flip=false,filter='none',original=null,videoUrl=null,cropRatio='free',sticker='none',makeupColor='#ff719d',history=[],historyIndex=-1,historyTimer=null,faceLandmarks=null,faceTask=null,faceTaskPromise=null,cameraStream=null,cameraFacing='user';const canvas=$('canvas'),ctx=canvas.getContext('2d');
 const ranges=['brightness','contrast','saturation','warmth','vignette','blur'];
+let faceWarpBusy=false;
+(function addReshapeControls(){
+ const grid=document.querySelector('.makeup-grid');if(!grid||document.getElementById('faceSlim'))return;
+ [['faceSlim','Thu gọn mặt',0,35],['eyeEnlarge','Mắt to tự nhiên',0,30]].forEach(([id,label,min,max])=>{
+  const wrap=document.createElement('label');wrap.className='makeup-option';
+  wrap.innerHTML='<span>✧ '+label+'</span><input id="'+id+'" type="range" min="'+min+'" max="'+max+'" value="0"><output id="'+id+'Val">0%</output>';
+  grid.appendChild(wrap);
+  $(id).addEventListener('input',()=>{$(id+'Val').textContent=$(id).value+'%';draw();queueSnapshot()});
+ });
+ const note=document.createElement('p');note.className='hint';note.id='reshapeHint';note.textContent='Thu gọn mặt và mắt to cần AI nhận diện được khuôn mặt. Hiệu ứng được xử lý cục bộ trên ảnh.';grid.insertAdjacentElement('afterend',note);
+})();
 // Advanced beauty controls: face landmarks + contour/nose/brow makeup.
 let showFacePoints=false;
 (function addAdvancedBeautyControls(){
@@ -9,7 +20,47 @@ let showFacePoints=false;
  const row=document.createElement('div');row.className='makeup-palette';row.innerHTML='<span>Định vị AI</span><button type="button" id="toggleFacePoints" class="tiny" aria-pressed="false">Hiện điểm mắt · mũi · miệng</button>';grid.insertAdjacentElement('afterend',row);
  row.querySelector('#toggleFacePoints').onclick=()=>{showFacePoints=!showFacePoints;const b=row.querySelector('button');b.textContent=showFacePoints?'Ẩn điểm mắt · mũi · miệng':'Hiện điểm mắt · mũi · miệng';b.setAttribute('aria-pressed',String(showFacePoints));draw()};
 })();function values(){return Object.fromEntries(ranges.map(k=>[k,+$(k).value]))}
-function draw(){if(!image)return;const v=values(),swap=angle%180!==0;const sourceW=original?original.sw:image.naturalWidth,sourceH=original?original.sh:image.naturalHeight;canvas.width=swap?sourceH:sourceW;canvas.height=swap?sourceW:sourceH;ctx.save();ctx.translate(canvas.width/2,canvas.height/2);ctx.rotate(angle*Math.PI/180);ctx.scale(flip?-1:1,1);const w=swap?image.naturalHeight:image.naturalWidth,h=swap?image.naturalWidth:image.naturalHeight;ctx.filter='brightness('+v.brightness+'%) contrast('+v.contrast+'%) saturate('+v.saturation+'%) blur('+v.blur+'px)';if(original){ctx.drawImage(image,original.sx,original.sy,original.sw,original.sh,-original.sw/2,-original.sh/2,original.sw,original.sh)}else{ctx.drawImage(image,-image.naturalWidth/2,-image.naturalHeight/2)}ctx.restore();ctx.filter='none';if(filter==='pink'||filter==='lavender'||filter==='glow'){ctx.globalCompositeOperation='soft-light';ctx.fillStyle=filter==='pink'?'#ff8acb':filter==='lavender'?'#b9a0ff':'#fff0cf';ctx.globalAlpha=filter==='glow'?.22:.25;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over'}if(filter==='mono'){const d=ctx.getImageData(0,0,canvas.width,canvas.height),p=d.data;for(let i=0;i<p.length;i+=4){const g=.299*p[i]+.587*p[i+1]+.114*p[i+2];p[i]=p[i+1]=p[i+2]=g}ctx.putImageData(d,0,0)}if(filter==='film'){ctx.fillStyle='#ffb76a';ctx.globalAlpha=.1;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.globalAlpha=1}if(v.warmth){ctx.globalCompositeOperation='soft-light';ctx.fillStyle=v.warmth>0?'#ff9d56':'#73baff';ctx.globalAlpha=Math.abs(v.warmth)/120;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over'}
+function draw(){if(!image)return;const v=values(),swap=angle%180!==0;const sourceW=original?original.sw:image.naturalWidth,sourceH=original?original.sh:image.naturalHeight;canvas.width=swap?sourceH:sourceW;canvas.height=swap?sourceW:sourceH;ctx.save();ctx.translate(canvas.width/2,canvas.height/2);ctx.rotate(angle*Math.PI/180);ctx.scale(flip?-1:1,1);const w=swap?image.naturalHeight:image.naturalWidth,h=swap?image.naturalWidth:image.naturalHeight;ctx.filter='brightness('+v.brightness+'%) contrast('+v.contrast+'%) saturate('+v.saturation+'%) blur('+v.blur+'px)';if(original){ctx.drawImage(image,original.sx,original.sy,original.sw,original.sh,-original.sw/2,-original.sh/2,original.sw,original.sh)}else{ctx.drawImage(image,-image.naturalWidth/2,-image.naturalHeight/2)}ctx.restore();
+ // Real pixel remapping for face slimming / eye enlargement, driven by detected landmarks.
+ const slim=+$('faceSlim')?.value||0,eyeBoost=+$('eyeEnlarge')?.value||0;
+ if(faceLandmarks&&angle===0&&!original&&(slim>0||eyeBoost>0)&&!faceWarpBusy){
+  try{
+   faceWarpBusy=true;
+   const w0=canvas.width,h0=canvas.height;
+   const src=ctx.getImageData(0,0,w0,h0),srcData=src.data;
+   const out=ctx.createImageData(w0,h0),dst=out.data;
+   const pt=i=>({x:faceLandmarks[i].x*w0,y:faceLandmarks[i].y*h0});
+   const nose0=pt(1),eyeL0=pt(468 in faceLandmarks?468:33),eyeR0=pt(473 in faceLandmarks?473:263);
+   const cheekL0=pt(234),cheekR0=pt(454);
+   const faceW=Math.max(1,Math.abs(cheekR0.x-cheekL0.x)),sigmaX=faceW*.19,sigmaY=h0*.20;
+   const slimK=slim/100*.48,eyeK=eyeBoost/100*.42;
+   for(let y=0;y<h0;y++){
+    for(let x=0;x<w0;x++){
+     let sx=x,sy=y;
+     if(slimK){
+      const gy=Math.exp(-Math.pow((y-nose0.y)/sigmaY,2));
+      const gx=Math.exp(-Math.pow((x-nose0.x)/(faceW*.62),2));
+      const k=Math.min(.22,slimK*gy*gx);
+      sx=nose0.x+(x-nose0.x)/(1-k);
+     }
+     if(eyeK){
+      for(const eye of [eyeL0,eyeR0]){
+       const ex=(x-eye.x)/(faceW*.105),ey=(y-eye.y)/(faceW*.09);
+       const g=Math.exp(-.5*(ex*ex+ey*ey));
+       const k=Math.min(.18,eyeK*g);
+       sx=eye.x+(sx-eye.x)/(1+k);sy=eye.y+(sy-eye.y)/(1+k);
+      }
+     }
+     const ix=Math.max(0,Math.min(w0-1,Math.round(sx))),iy=Math.max(0,Math.min(h0-1,Math.round(sy)));
+     const si=(iy*w0+ix)*4,di=(y*w0+x)*4;
+     dst[di]=srcData[si];dst[di+1]=srcData[si+1];dst[di+2]=srcData[si+2];dst[di+3]=srcData[si+3];
+    }
+   }
+   ctx.putImageData(out,0,0);
+  }catch(err){const hint=$('reshapeHint');if(hint)hint.textContent='Ảnh quá lớn để biến dạng mượt trên thiết bị này. Hãy thử ảnh nhỏ hơn.'}
+  finally{faceWarpBusy=false}
+ }else if((slim>0||eyeBoost>0)&&!faceLandmarks){const hint=$('reshapeHint');if(hint)hint.textContent='Chưa nhận diện được mặt: hãy thử lại AI hoặc chọn ảnh chân dung rõ, đủ sáng.'}
+ ctx.filter='none';if(filter==='pink'||filter==='lavender'||filter==='glow'){ctx.globalCompositeOperation='soft-light';ctx.fillStyle=filter==='pink'?'#ff8acb':filter==='lavender'?'#b9a0ff':'#fff0cf';ctx.globalAlpha=filter==='glow'?.22:.25;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over'}if(filter==='mono'){const d=ctx.getImageData(0,0,canvas.width,canvas.height),p=d.data;for(let i=0;i<p.length;i+=4){const g=.299*p[i]+.587*p[i+1]+.114*p[i+2];p[i]=p[i+1]=p[i+2]=g}ctx.putImageData(d,0,0)}if(filter==='film'){ctx.fillStyle='#ffb76a';ctx.globalAlpha=.1;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.globalAlpha=1}if(v.warmth){ctx.globalCompositeOperation='soft-light';ctx.fillStyle=v.warmth>0?'#ff9d56':'#73baff';ctx.globalAlpha=Math.abs(v.warmth)/120;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over'}
 if(v.vignette>0){const radius=Math.max(canvas.width,canvas.height)*.72;const g=ctx.createRadialGradient(canvas.width/2,canvas.height/2,Math.min(canvas.width,canvas.height)*.18,canvas.width/2,canvas.height/2,radius);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,'+(v.vignette/100)+')');ctx.fillStyle=g;ctx.fillRect(0,0,canvas.width,canvas.height)}
 
 // Makeup overlays use facial landmarks when available; otherwise fall back to relative positions.
@@ -116,7 +167,7 @@ $('retryFaceAI').addEventListener('click',async()=>{if(faceTask){try{faceTask.cl
 $('openCamera').addEventListener('click',openCamera);$('closeCamera').addEventListener('click',()=>{stopCamera();$('cameraDialog').hidden=true});
 $('cameraDialog').addEventListener('click',e=>{if(e.target===$('cameraDialog'))$('closeCamera').click()});
 $('switchCamera').addEventListener('click',async()=>{cameraFacing=cameraFacing==='user'?'environment':'user';await openCamera()});
-$('takePhoto').addEventListener('click',()=>{const v=$('cameraVideo');if(!cameraStream||!v.videoWidth){$('cameraStatus').textContent='Camera chưa sẵn sàng.';return}const snap=document.createElement('canvas');snap.width=v.videoWidth;snap.height=v.videoHeight;const sc=snap.getContext('2d');sc.translate(snap.width,0);sc.scale(-1,1);sc.drawImage(v,0,0,snap.width,snap.height);const next=new Image();next.onload=()=>{image=next;angle=0;flip=false;filter='none';original=null;cropRatio='free';sticker='none';['makeupBlush','makeupLip','makeupEye','makeupGlow','makeupContour','makeupNose','makeupBrow'].forEach(id=>{if($(id)){$(id).value=0;$(id+'Val').textContent='0%'}});history=[];historyIndex=-1;draw();snapshot();$('downloadPhoto').disabled=false;$('compare').disabled=false;$('saveLibrary').disabled=false;$('photoInput').value='';detectFace(image)};next.src=snap.toDataURL('image/jpeg',.94);stopCamera();$('cameraDialog').hidden=true});
+$('takePhoto').addEventListener('click',()=>{const v=$('cameraVideo');if(!cameraStream||!v.videoWidth){$('cameraStatus').textContent='Camera chưa sẵn sàng.';return}const snap=document.createElement('canvas');snap.width=v.videoWidth;snap.height=v.videoHeight;const sc=snap.getContext('2d');sc.translate(snap.width,0);sc.scale(-1,1);sc.drawImage(v,0,0,snap.width,snap.height);const next=new Image();next.onload=()=>{image=next;angle=0;flip=false;filter='none';original=null;cropRatio='free';sticker='none';['makeupBlush','makeupLip','makeupEye','makeupGlow','makeupContour','makeupNose','makeupBrow','faceSlim','eyeEnlarge'].forEach(id=>{if($(id)){$(id).value=0;$(id+'Val').textContent='0%'}});history=[];historyIndex=-1;draw();snapshot();$('downloadPhoto').disabled=false;$('compare').disabled=false;$('saveLibrary').disabled=false;$('photoInput').value='';detectFace(image)};next.src=snap.toDataURL('image/jpeg',.94);stopCamera();$('cameraDialog').hidden=true});
 function setPreset(name){
  const presets={
   clean:{brightness:106,contrast:98,saturation:92,warmth:5,vignette:5,blur:0,filter:'glow',makeupBlush:12,makeupLip:12,makeupEye:4,makeupGlow:10,color:'#e9a47d'},
@@ -135,7 +186,7 @@ function setPreset(name){
   makeupColor=p.color;filter=p.filter;
  }
  ranges.forEach(k=>{$(k+'Val').textContent=k==='warmth'?$(k).value:k==='blur'?$(k).value+'px':$(k).value+'%'});
- ['makeupBlush','makeupLip','makeupEye','makeupGlow','makeupContour','makeupNose','makeupBrow'].forEach(k=>{if($(k))$(k+'Val').textContent=$(k).value+'%'});
+ ['makeupBlush','makeupLip','makeupEye','makeupGlow','makeupContour','makeupNose','makeupBrow','faceSlim','eyeEnlarge'].forEach(k=>{if($(k))$(k+'Val').textContent=$(k).value+'%'});
  document.querySelectorAll('.filter[data-filter]').forEach(b=>b.classList.toggle('selected',b.dataset.filter===filter));
  document.querySelectorAll('[data-makeup-color]').forEach(b=>b.classList.toggle('selected',b.dataset.makeupColor===makeupColor));
  document.querySelectorAll('[data-preset]').forEach(b=>b.classList.toggle('selected',b.dataset.preset===name));
