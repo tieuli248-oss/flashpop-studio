@@ -249,3 +249,18 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
  .control-groups>.effects>.control{padding:7px}
  .control-groups>.effects>.control b{font-size:11px}
 }
+
+
+/* Music source: player on the left, song search/results on the right */
+.music-source-panel .music-source-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,1fr);gap:16px;align-items:start}
+.music-source-panel .music-player-side,.music-source-panel .music-search-side{min-width:0}
+.music-source-panel .music-player-side .video{margin-top:0}
+.music-source-panel .music-player-side .foot{margin-top:10px}
+.music-source-panel .music-search-side .searchform{margin-top:0}
+.music-source-panel .music-search-side .search-results{max-height:520px;overflow-y:auto;overscroll-behavior:contain}
+@media(max-width:700px){
+ .music-source-panel .music-source-layout{grid-template-columns:minmax(0,1fr)}
+ .music-source-panel .music-player-side{grid-row:1}
+ .music-source-panel .music-search-side{grid-row:2}
+ .music-source-panel .music-search-side .search-results{max-height:360px}
+}
