@@ -113,3 +113,14 @@ footer{padding-top:24px;color:#857a91}
 @media(max-width:850px){.workspace{grid-template-columns:minmax(0,1fr)}.stage{position:relative;top:auto;max-height:none;min-height:430px}.tools{max-height:none;overflow:visible}.tools-title{top:60px}.canvas-stage{min-height:340px}}
 @media(max-width:480px){.topbar{height:58px}.shell{padding-top:20px}.hero-orb{width:54px;height:54px;font-size:24px}.hero-orb small{margin-top:38px}.mode-tabs{position:sticky;top:58px;z-index:6;padding:6px 0;background:#100d16e8;backdrop-filter:blur(12px)}.workspace{gap:10px}.stage{border-radius:14px;min-height:350px}.stage-head{padding:9px}.canvas-stage{min-height:270px;padding:10px}.tools{padding:14px}.tools-title{top:58px}.tools h2{font-size:13px}.face-status-row{grid-template-columns:minmax(0,1fr) auto}.face-status{font-size:8px;padding:7px}.camera-launch{padding:11px}.quick-presets{gap:5px}.quick-preset{min-height:56px}.history-bar{bottom:0}.stage-foot{padding:10px}.stage-foot span:first-child{font-size:8px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+
+/* Hypic-inspired studio tool categories */
+.studio-tool-tabs{position:sticky;top:112px;z-index:3;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:7px;margin:0 -2px 12px;border:1px solid #ffffff0d;border-radius:12px;background:#17131ef2;backdrop-filter:blur(16px)}
+.studio-tool-tab{min-width:0;display:flex;align-items:center;justify-content:center;padding:9px 4px;border:1px solid transparent;border-radius:8px;background:transparent;color:#a99db6;font-size:9px;font-weight:700;white-space:nowrap}
+.studio-tool-tab.active{color:#ff9ed6;border-color:#ff9ed633;background:linear-gradient(145deg,#ff9ed61b,#c7b1ff10);box-shadow:inset 0 1px #ffffff0a}
+.studio-tool-pane[hidden]{display:none!important}.studio-tool-pane{animation:toolPaneIn .18s ease-out}.studio-tool-pane>h3:first-child{margin-top:12px}
+@keyframes toolPaneIn{from{opacity:.65;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+@media(min-width:851px){.studio-tool-tabs{top:116px}}@media(max-width:850px){.studio-tool-tabs{top:108px}}
+@media(max-width:480px){.studio-tool-tabs{top:104px;gap:2px;padding:4px;margin-bottom:9px}.studio-tool-tab{font-size:8px;padding:9px 1px;letter-spacing:-.03em}.tools-title{top:58px}}
+@media(prefers-reduced-motion:reduce){.studio-tool-pane{animation:none}}
